@@ -221,7 +221,7 @@ export function initCombat(playerParty, enemyParty) {
   return {
     turn: 1,
     phase: firstTurn,  // 'player' or 'enemy'
-    sharedEnergy: BASE_ENERGY_PER_TURN,
+    sharedEnergy: BASE_ENERGY_PER_TURN * Math.max(1, playerActive.length),
     log: [`Combat begins! ${firstTurn === 'player' ? 'Player' : 'Enemy'} goes first.`],
 
     player: {
@@ -794,9 +794,11 @@ export function startTurn(state, side) {
   let newState = { ...state };
   const log = [...state.log, `--- Turn ${state.turn} (${side}) ---`];
 
-  // Restore energy only at the start of the player's turn
+  // Restore energy at start of player's turn — scales with active creature count
   if (side === 'player') {
-    newState = { ...newState, sharedEnergy: BASE_ENERGY_PER_TURN };
+    const activeCount = newState.player.active.filter(s => s && s.creature.currentHp > 0).length;
+    const energyThisTurn = BASE_ENERGY_PER_TURN * activeCount;
+    newState = { ...newState, sharedEnergy: energyThisTurn };
   }
 
   // Each active creature on this side draws a card and processes status effects

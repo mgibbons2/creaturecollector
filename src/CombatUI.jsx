@@ -751,7 +751,7 @@ function RelicBar({ relicIds }) {
 
 // ─── BATTLE TEXT BOX ─────────────────────────────────────────
 
-function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onEndTurn, isPlayerTurn, isEnemyStep, onAdvanceQueue, energy }) {
+function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onEndTurn, isPlayerTurn, isEnemyStep, onAdvanceQueue, energy, maxEnergy = 3 }) {
   const ref = useRef(null);
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
@@ -815,7 +815,7 @@ function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onE
           <span style={{ fontSize:9, fontWeight:900, color:"#605840", letterSpacing:"0.08em" }}>
             ENERGY
           </span>
-          {Array.from({ length:3 }).map((_, i) => (
+          {Array.from({ length:maxEnergy }).map((_, i) => (
             <div key={i} style={{
               width:15, height:15, borderRadius:"50%",
               background: i < energy ? "#F8D030" : "transparent",
@@ -825,7 +825,7 @@ function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onE
             }} />
           ))}
           <span style={{ fontSize:12, fontWeight:900, color:"#302810", minWidth:20 }}>
-            {energy}<span style={{ color:"#907860", fontWeight:500 }}>/3</span>
+            {energy}<span style={{ color:"#907860", fontWeight:500 }}>/{maxEnergy}</span>
           </span>
         </div>
       </div>
@@ -1688,6 +1688,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
         isEnemyStep={isEnemyStep}
         onAdvanceQueue={advanceEnemyQueue}
         energy={state.sharedEnergy}
+        maxEnergy={state.player.active.filter(s => s && s.creature.currentHp > 0).length * 3}
       />
 
       {/* ── Drag ghost card ── */}
