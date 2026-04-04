@@ -291,9 +291,9 @@ export default function RewardScreen() {
               cursor:"pointer", letterSpacing:"0.08em",
               boxShadow:"0 3px 0 #604000",
             }}
-            onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"}
-            onMouseUp={e   => e.currentTarget.style.transform="none"}
-            onMouseLeave={e=> e.currentTarget.style.transform="none"}
+            onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"}
+            onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+            onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
           >
             COLLECT
           </button>
@@ -330,8 +330,8 @@ export default function RewardScreen() {
             transition:"all 0.15s",
           }}
           onMouseDown={e => canFinish && (e.currentTarget.style.transform="translateY(5px)")}
-          onMouseUp={e   => (e.currentTarget.style.transform="none")}
-          onMouseLeave={e=> (e.currentTarget.style.transform="none")}
+          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
         >
           {canFinish ? "RETURN TO MAP ▶" : "COLLECT REWARDS FIRST"}
         </button>

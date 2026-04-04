@@ -399,9 +399,9 @@ export default function MapScreen() {
                     cursor:"pointer", letterSpacing:"0.1em",
                     boxShadow:"0 3px 0 #504838",
                   }}
-                  onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"}
-                  onMouseUp={e   => e.currentTarget.style.transform="none"}
-                  onMouseLeave={e=> e.currentTarget.style.transform="none"}
+                  onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"}
+                  onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+                  onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
                 >
                   ENTER ▶
                 </button>

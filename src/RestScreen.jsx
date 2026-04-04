@@ -258,9 +258,9 @@ export default function RestScreen() {
             letterSpacing:"0.1em", boxShadow:"0 4px 0 #504838",
             transition:"all 0.08s",
           }}
-          onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"}
-          onMouseUp={e   => e.currentTarget.style.transform="none"}
-          onMouseLeave={e=> e.currentTarget.style.transform="none"}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(4px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(4px)"}
+          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
         >
           RETURN TO MAP ▶
         </button>
@@ -308,7 +308,7 @@ export default function RestScreen() {
                 boxShadow:"0 4px 0 #184010",
               }}
               onMouseEnter={e => e.currentTarget.style.transform="translateY(-4px)"}
-              onMouseLeave={e => e.currentTarget.style.transform="none"}
+              onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
             >
               <div style={{ fontSize:32, marginBottom:10 }}>♥</div>
               <div style={{ fontSize:15, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.06em", marginBottom:8 }}>
@@ -333,7 +333,7 @@ export default function RestScreen() {
                 boxShadow:"0 4px 0 #203060",
               }}
               onMouseEnter={e => e.currentTarget.style.transform="translateY(-4px)"}
-              onMouseLeave={e => e.currentTarget.style.transform="none"}
+              onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
             >
               <div style={{ fontSize:32, marginBottom:10 }}>✦</div>
               <div style={{ fontSize:15, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.06em", marginBottom:8 }}>
@@ -379,9 +379,9 @@ export default function RestScreen() {
                 boxShadow:"0 5px 0 #185808",
                 transition:"all 0.08s",
               }}
-              onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"}
-              onMouseUp={e   => e.currentTarget.style.transform="none"}
-              onMouseLeave={e=> e.currentTarget.style.transform="none"}
+              onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
+              onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+              onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
             >
               ♥ REST AND HEAL
             </button>
@@ -463,9 +463,9 @@ export default function RestScreen() {
                   boxShadow:"0 5px 0 #203080",
                   transition:"all 0.08s",
                 }}
-                onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"}
-                onMouseUp={e   => e.currentTarget.style.transform="none"}
-                onMouseLeave={e=> e.currentTarget.style.transform="none"}
+                onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
+                onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+                onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
               >
                 ✦ UPGRADE {CARD_DEFS[selectedCard]?.name.toUpperCase()}
               </button>

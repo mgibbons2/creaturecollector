@@ -303,7 +303,7 @@ function ConfirmButton({ label, color, onClick }) {
         boxShadow:`0 5px 0 ${color.dark}, 0 0 20px ${color.mid}44`,
         transition:"all 0.08s",
       }}
-      onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"}
+      onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
       onMouseUp={e   => e.currentTarget.style.transform="translateY(0)"}
       onMouseLeave={e=> e.currentTarget.style.transform="translateY(0)"}
     >

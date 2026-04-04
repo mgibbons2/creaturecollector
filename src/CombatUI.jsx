@@ -218,34 +218,36 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
         </div>
       </div>
 
-      {/* Status effects — only rendered when there are effects */}
-      {creature.statusEffects.length > 0 && (
-      <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:6, alignItems:"center" }}>
+      {/* Status effects — always rendered at fixed height so panel never resizes */}
+      <div style={{
+        height: 26, marginBottom: 4, flexShrink: 0,
+        display:"flex", gap:3, alignItems:"center", overflow:"hidden",
+      }}>
         {creature.statusEffects.map((e, i) => {
-              const m = STATUS_META[e.type] || { color:"#888", icon:"?", label:"Unknown", desc:"" };
-              const tipLabel = `${m.label}${e.stacks > 1 ? ` ×${e.stacks}` : ""}${m.desc ? ` — ${m.desc}` : ""}`;
-              return (
-                <Tip key={i} label={tipLabel}>
-                  <span style={{
-                    fontSize:11, fontWeight:900, padding:"2px 6px",
-                    background: m.color, color:"#fff",
-                    borderRadius:4, letterSpacing:"0.02em",
-                    border:`1px solid ${m.color}cc`,
-                    cursor:"default",
-                    display:"inline-flex", alignItems:"center", gap:2,
-                    boxShadow:`0 2px 4px ${m.color}55`,
-                  }}>
-                    <span style={{fontSize:13}}>{m.icon}</span>
-                    {e.stacks > 1 && (
-                      <span style={{fontSize:9, fontWeight:900}}>×{e.stacks}</span>
-                    )}
-                  </span>
-                </Tip>
-              );
-            })
-        }
+          const m = STATUS_META[e.type] || { color:"#888", icon:"?", label:"Unknown", desc:"" };
+          const tipLabel = `${m.label}${e.stacks > 1 ? ` ×${e.stacks}` : ""}${m.desc ? ` — ${m.desc}` : ""}`;
+          return (
+            <Tip key={i} label={tipLabel}>
+              <span style={{
+                fontSize:10, fontWeight:900, padding:"1px 5px",
+                background: m.color, color:"#fff",
+                borderRadius:4, letterSpacing:"0.02em",
+                border:`1px solid ${m.color}cc`,
+                cursor:"default",
+                display:"inline-flex", alignItems:"center", gap:2,
+                boxShadow:`0 1px 3px ${m.color}55`,
+                flexShrink:0,
+                height:20, boxSizing:"border-box",
+              }}>
+                <span style={{fontSize:12, lineHeight:1}}>{m.icon}</span>
+                {e.stacks > 1 && (
+                  <span style={{fontSize:8, fontWeight:900}}>×{e.stacks}</span>
+                )}
+              </span>
+            </Tip>
+          );
+        })}
       </div>
-      )}
 
       {/* HP bar row */}
       <div style={{ marginBottom:3 }}>
@@ -615,57 +617,92 @@ function DraggableCard({ cardId, slotIdx, isSelected, isPlayable, bobDelay, effe
     onClickRef.current     = onClick;
   });
 
-  function handleMouseDown(e) {
+  function startInteraction(clientX, clientY) {
     if (!isPlayable) return;
-    e.preventDefault();
     dragging.current = false;
-    startPos.current = { x: e.clientX, y: e.clientY };
+    startPos.current = { x: clientX, y: clientY };
 
-    function onMove(mv) {
-      const dx = mv.clientX - startPos.current.x;
-      const dy = mv.clientY - startPos.current.y;
+    function onMove(x, y) {
+      const dx = x - startPos.current.x;
+      const dy = y - startPos.current.y;
       if (!dragging.current && Math.sqrt(dx*dx+dy*dy) > 6) {
         dragging.current = true;
         const rect = ref.current?.getBoundingClientRect();
-        const cx = rect ? rect.left + rect.width/2 : mv.clientX;
-        const cy = rect ? rect.top  + rect.height/2 : mv.clientY;
+        const cx = rect ? rect.left + rect.width/2 : x;
+        const cy = rect ? rect.top  + rect.height/2 : y;
         onDragStartRef.current({ cardId, slotIdx, originX: cx, originY: cy });
       }
       if (dragging.current) {
-        onDragMoveRef.current({ x: mv.clientX, y: mv.clientY });
+        onDragMoveRef.current({ x, y });
       }
     }
-    function onUp(up) {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup",   onUp);
+    function onMouseMove(mv) { onMove(mv.clientX, mv.clientY); }
+    function onTouchMove(tv) {
+      tv.preventDefault();
+      const t = tv.touches[0];
+      onMove(t.clientX, t.clientY);
+    }
+    function finish(x, y) {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup",   onMouseUp);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend",  onTouchEnd);
       if (dragging.current) {
-        onDragEndRef.current({ x: up.clientX, y: up.clientY });
+        onDragEndRef.current({ x, y });
         dragging.current = false;
       } else {
         onClickRef.current();
       }
     }
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup",   onUp);
+    function onMouseUp(up) { finish(up.clientX, up.clientY); }
+    function onTouchEnd(te) {
+      const t = te.changedTouches[0];
+      finish(t.clientX, t.clientY);
+    }
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup",   onMouseUp);
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend",  onTouchEnd);
+  }
+
+  function handleMouseDown(e) {
+    if (!isPlayable) return;
+    e.preventDefault();
+    startInteraction(e.clientX, e.clientY);
+  }
+
+  function handleTouchStart(e) {
+    if (!isPlayable) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    startInteraction(t.clientX, t.clientY);
   }
 
   return (
     <div
       ref={ref}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
       data-card-id={cardId}
       data-slot-idx={slotIdx}
       style={{
         flexShrink:0,
         cursor: isPlayable ? "grab" : "not-allowed",
         opacity: isPlayable ? 1 : 0.4,
-        transform: isSelected ? "translateY(-18px) scale(1.07)" : "translateY(0)",
-        transition:"transform 0.15s ease, opacity 0.15s",
-        animation: isPlayable && !isSelected ? `cardBob 2.4s ease-in-out ${bobDelay}s infinite` : "none",
         position:"relative", zIndex: isSelected ? 10 : 1,
+        // No animation or transform here — keeps flex layout stable
+        alignSelf:"flex-end",
       }}
     >
-      <CardFace card={card} col={col} isSelected={isSelected} isDragging={false} effectiveCost={effectiveCost} />
+      {/* Inner div carries all visual animation — does NOT affect layout */}
+      <div style={{
+        transform: isSelected ? "translateY(-18px) scale(1.07)" : "translateY(0)",
+        transition:"transform 0.15s ease",
+        animation: isPlayable && !isSelected ? `cardBob 2.4s ease-in-out ${bobDelay}s infinite` : "none",
+        willChange:"transform",
+      }}>
+        <CardFace card={card} col={col} isSelected={isSelected} isDragging={false} effectiveCost={effectiveCost} />
+      </div>
     </div>
   );
 }
@@ -803,6 +840,9 @@ function PokeButton({ color, dark, textColor = "#fff", onClick, children }) {
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
+      onTouchStart={() => setPressed(true)}
+      onTouchEnd={() => { setPressed(false); onClick?.(); }}
+      onTouchCancel={() => setPressed(false)}
       onClick={onClick}
       style={{
         fontFamily:"'Courier New', monospace",
@@ -1496,6 +1536,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
       margin:"0 auto",
       position:"relative",
       userSelect: drag ? "none" : "auto",
+      touchAction: "pan-y",
     }}>
 
       {/* ─── Relic bar ── */}
@@ -1582,10 +1623,11 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
                         <span style={{ color:"#D04040", fontWeight:900, marginLeft:4 }}>STUNNED</span>
                       )}
                     </div>
-                    <div style={{
+                    <div className="hand-card-row" style={{
                       display:"flex", gap:5, overflowX:"auto",
-                      paddingBottom:24, paddingTop:4,
-                      alignItems:"flex-end", overflowY:"visible",
+                      paddingBottom:8, paddingTop:8,
+                      alignItems:"flex-end", overflowY:"hidden",
+                      height:100, boxSizing:"border-box",
                     }}>
                       {slot.hand.length === 0 ? (
                         <div style={{
@@ -1896,6 +1938,8 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
           opacity: 1;
           transition: opacity 0.12s ease;
         }
+        .hand-card-row::-webkit-scrollbar { display: none; }
+        .hand-card-row { -ms-overflow-style: none; scrollbar-width: none; }
         .compact-card {
           width: 58px;
           transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -1904,8 +1948,11 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
           z-index: 1;
           cursor: pointer;
           flex-shrink: 0;
+          touch-action: none;
+          -webkit-tap-highlight-color: transparent;
         }
-        .compact-card:hover {
+        .compact-card:hover,
+        .compact-card:active {
           transform: translateY(-4px);
         }
         .compact-card.selected {

@@ -277,9 +277,9 @@ export default function EventScreen() {
                 display:"block",
                 transition:"all 0.08s",
               }}
-              onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"}
-              onMouseUp={e   => e.currentTarget.style.transform="none"}
-              onMouseLeave={e=> e.currentTarget.style.transform="none"}
+              onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(4px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(4px)"}
+              onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+              onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
             >
               CONTINUE ▶
             </button>

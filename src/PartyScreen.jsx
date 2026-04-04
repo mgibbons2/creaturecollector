@@ -64,7 +64,7 @@ function TypeIcon({ type, size = 20 }) {
 
 function PartySlot({
   creature, slotIndex, isActive, isEmpty,
-  isSelected, isDragOver,
+  isSelected, isDragOver, dragFrom,
   onSelect, onDragStart, onDragOver, onDrop, onDragEnd,
 }) {
   const col = creature ? TYPE_COLORS[creature.type] || TYPE_COLORS.colorless : null;
@@ -729,6 +729,7 @@ export default function PartyScreen({ onClose }) {
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
+              dragFrom={dragFrom}
             />
           ))}
 
@@ -752,6 +753,7 @@ export default function PartyScreen({ onClose }) {
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
+              dragFrom={dragFrom}
             />
           ))}
 

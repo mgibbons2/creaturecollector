@@ -649,6 +649,12 @@ export function playCard(state, slotIndex, cardId, targetSide = 'enemy', targetS
     log.push(`${attacker.name} restores ${card.energyGain} energy!`);
   }
 
+  // Status-only cards — apply onHitStatus directly to the enemy target (no roll)
+  if (!card.tags.includes('attack') && card.onHitStatus) {
+    updatedTargetSlot = addStatus(updatedTargetSlot, card.onHitStatus.type, card.onHitStatus.stacks);
+    log.push(`${defender.name} is afflicted with ${card.onHitStatus.stacks} ${card.onHitStatus.type}!`);
+  }
+
   // On-play status effects (applied to self)
   if (card.onPlayStatus) {
     updatedSourceSlot = addStatus(updatedSourceSlot, card.onPlayStatus.type, card.onPlayStatus.stacks);
