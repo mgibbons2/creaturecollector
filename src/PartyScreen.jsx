@@ -245,8 +245,83 @@ function RosterCard({ creature, isInParty, isSelected, onSelect, onAddToParty, p
 
 // ─── DETAIL PANEL ────────────────────────────────────────────
 
+function CardTooltip({ card, cardCol, isAttack, isDefend, x, y }) {
+  const tipW = 190;
+  const left = Math.max(8, Math.min(x - tipW / 2, 1400 - tipW));
+  const top = y - 12;
+  const col = cardCol;
+  return (
+    <div style={{
+      position:"fixed",
+      left, top,
+      transform:"translateY(-100%)",
+      width:tipW,
+      background:"linear-gradient(160deg, #1E1A12 0%, #120F08 100%)",
+      border:`2px solid ${col.mid}`,
+      borderRadius:10,
+      padding:"12px 14px",
+      boxShadow:`0 12px 32px rgba(0,0,0,0.85), 0 0 0 1px ${col.dark}, 0 0 16px ${col.mid}44`,
+      pointerEvents:"none",
+      zIndex:9999,
+      fontFamily:"'Courier New', monospace",
+    }}>
+      {/* Colour bar */}
+      <div style={{ height:2, borderRadius:1, marginBottom:8,
+        background:`linear-gradient(to right,${col.light},${col.mid})` }} />
+      {/* Name */}
+      <div style={{ fontSize:12, fontWeight:900, color:col.light,
+        marginBottom:5, letterSpacing:"0.04em" }}>
+        {card.name.toUpperCase()}
+      </div>
+      {/* Tag + cost */}
+      <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:8 }}>
+        <span style={{ fontSize:9, fontWeight:900, padding:"2px 7px", borderRadius:3,
+          background: isAttack?"#D06020":isDefend?"#4060D0":"#409030",
+          color:"#fff", letterSpacing:"0.05em" }}>
+          {isAttack?"ATK":isDefend?"DEF":"UTL"}
+        </span>
+        <span style={{ fontSize:9, color:"#A09070" }}>⚡ {card.energyCost}</span>
+      </div>
+      {/* Description */}
+      <div style={{ fontSize:10, color:"#C8B890", lineHeight:1.6, marginBottom:8 }}>
+        {card.description}
+      </div>
+      {/* Stat lines */}
+      <div style={{ display:"flex", flexDirection:"column", gap:4,
+        borderTop:`1px solid ${col.mid}44`, paddingTop:8 }}>
+        {card.baseDamage > 0 && (
+          <div style={{ fontSize:9, color:"#F08050", fontWeight:700 }}>
+            ⚔ {card.baseDamage} base damage
+          </div>
+        )}
+        {card.shieldAmount > 0 && (
+          <div style={{ fontSize:9, color:"#5898F0", fontWeight:700 }}>
+            🛡 {card.shieldAmount} shield
+          </div>
+        )}
+        {card.healAmount > 0 && (
+          <div style={{ fontSize:9, color:"#58C870", fontWeight:700 }}>
+            💚 {card.healAmount} heal
+          </div>
+        )}
+        {card.onHitStatus && (
+          <div style={{ fontSize:9, color:"#E0A040", fontWeight:700 }}>
+            ✦ Inflicts {card.onHitStatus.stacks}× {card.onHitStatus.type}
+          </div>
+        )}
+        {card.onPlayStatus && (
+          <div style={{ fontSize:9, color:"#A0C8E0", fontWeight:700 }}>
+            ★ Grants {card.onPlayStatus.stacks}× {card.onPlayStatus.type}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
   const [tab, setTab] = useState("stats"); // stats | deck
+  const [hoveredCard, setHoveredCard] = useState(null); // {card, x, y}
   if (!creature) return (
     <div style={{
       flex:1, display:"flex", alignItems:"center", justifyContent:"center",
@@ -450,27 +525,55 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
             {uniqueCards.length === 0 && (
               <p style={{ fontSize:9, color:"#403828" }}>No cards in deck.</p>
             )}
+            <style>{`
+              @keyframes deckCardBob {
+                0%,100% { transform: translateY(0px); }
+                50%      { transform: translateY(-4px); }
+              }
+              .deck-card {
+                transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+                            box-shadow 0.18s ease,
+                            border-color 0.15s ease;
+                animation: deckCardBob 3s ease-in-out infinite;
+                cursor: pointer;
+              }
+              .deck-card:hover {
+                transform: translateY(-10px) scale(1.08) !important;
+                animation: none !important;
+                z-index: 10;
+              }
+
+            `}</style>
             <div style={{
-              display:"flex", flexWrap:"wrap", gap:8, marginTop:4,
+              display:"flex", flexWrap:"wrap", gap:12, marginTop:4,
+              paddingBottom:12,
             }}>
-              {uniqueCards.map(([cardId, count]) => {
+              {uniqueCards.map(([cardId, count], cardIndex) => {
                 const card = CARD_DEFS[cardId];
                 if (!card) return null;
                 const cardCol = TYPE_COLORS[card.type] || TYPE_COLORS.colorless;
                 const isAttack = card.tags.includes("attack");
                 const isDefend = card.tags.includes("defend");
+                const bobDelay = (cardIndex * 0.4) % 3;
                 return (
-                  <div key={cardId} style={{
-                    position:"relative", width:80, height:112,
-                    background:"#FFFEF5",
+                  <div key={cardId} className="deck-card" 
+                    onMouseEnter={e => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setHoveredCard({ card, cardCol, isAttack, isDefend, x: rect.left + rect.width/2, y: rect.top });
+                    }}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    style={{
+                    position:"relative", width:88, height:124,
+                    background:`linear-gradient(160deg, #FFFEF8 0%, #F8F4E8 100%)`,
                     border:`2px solid ${cardCol.mid}`,
-                    borderRadius:8,
+                    borderRadius:9,
                     padding:"7px 7px 6px",
                     boxSizing:"border-box",
-                    overflow:"hidden",
+                    overflow:"visible",
                     flexShrink:0,
-                    boxShadow:`0 3px 8px rgba(0,0,0,0.35), 0 2px 0 ${cardCol.dark}`,
+                    boxShadow:`0 4px 12px rgba(0,0,0,0.3), 0 2px 0 ${cardCol.dark}, inset 0 1px 0 rgba(255,255,255,0.8)`,
                     fontFamily:"'Courier New', monospace",
+                    animationDelay: `${bobDelay}s`,
                   }}>
                     {/* Energy cost pip */}
                     <div style={{
@@ -542,6 +645,8 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
                     }}>
                       {card.description}
                     </div>
+
+
                   </div>
                 );
               })}
@@ -549,6 +654,18 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
           </div>
         )}
       </div>
+
+      {/* Fixed-position card tooltip */}
+      {hoveredCard && (
+        <CardTooltip
+          card={hoveredCard.card}
+          cardCol={hoveredCard.cardCol}
+          isAttack={hoveredCard.isAttack}
+          isDefend={hoveredCard.isDefend}
+          x={hoveredCard.x}
+          y={hoveredCard.y}
+        />
+      )}
 
       {/* Swap out button — shown if this is a party slot and there's a roster swap pending */}
       {partyIndex !== null && partyIndex !== undefined && (

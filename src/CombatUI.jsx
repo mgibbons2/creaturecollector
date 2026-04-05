@@ -3,7 +3,7 @@ import {
   applyRelicDamageBonus, applyRelicHitBonus,
   getRelicExtraDraws, getRelicOnHitStatuses, applyRelicDrainBonus,
 } from "./relicEngine.js";
-import { runEnemyTurn, BASE_ENERGY_PER_TURN, playCard, checkFaints, TYPE_CHART } from "./combatEngine.js";
+import { runEnemyTurn, runEnemyTurnSteps, startTurn, tickPlayerStatuses, BASE_ENERGY_PER_TURN, CARDS_PER_ROUND, playCard, checkFaints, TYPE_CHART } from "./combatEngine.js";
 import { CARD_DEFS as IMPORTED_CARD_DEFS } from "./cardDefs.js";
 
 // ─── MOCK DATA ───────────────────────────────────────────────
@@ -123,18 +123,26 @@ const CREATURE_SHAPES = {
 
 
 const STATUS_META = {
-  ignite:   { label:"Ignite",   color:"#DD6610", icon:"🔥", desc:"Burns each turn, dealing damage" },
-  poison:   { label:"Poison",   color:"#4a8c2a", icon:"☠",  desc:"Poisons each turn, dealing damage" },
-  shield:   { label:"Shield",   color:"#2B7FE8", icon:"🛡",  desc:"Absorbs incoming damage" },
-  fortify:  { label:"Fortify",  color:"#8c6a2a", icon:"🪨",  desc:"Reduces damage taken" },
-  flow:     { label:"Flow",     color:"#2b9dd9", icon:"💧",  desc:"Boosts card draw each turn" },
-  gust:     { label:"Gust",     color:"#6070C8", icon:"🌀",  desc:"Increases attack damage" },
-  radiance: { label:"Radiance", color:"#C89010", icon:"✨",  desc:"Heals a small amount each turn" },
-  stun:     { label:"Stun",     color:"#888888", icon:"⚡",  desc:"Skips this creature's next turn" },
-  slow:     { label:"Slow",     color:"#888888", icon:"🐢",  desc:"Reduces energy available each turn" },
-  weak:     { label:"Weak",     color:"#c05050", icon:"💔",  desc:"Reduces damage dealt" },
-  blind:    { label:"Blind",    color:"#555555", icon:"👁",  desc:"Attacks have a chance to miss" },
-  evasion:  { label:"Evasion",  color:"#6070C8", icon:"💨",  desc:"Chance to dodge incoming attacks" },
+  ignite:       { label:"Ignite",       color:"#DD6610", icon:"🔥", desc:"Takes ignite damage each turn, decays" },
+  burn:         { label:"Burn",         color:"#AA3300", icon:"🔥", desc:"Takes burn damage each turn, decays" },
+  poison:       { label:"Poison",       color:"#4a8c2a", icon:"☠",  desc:"Takes poison damage each turn, persists" },
+  shield:       { label:"Shield",       color:"#2B7FE8", icon:"🛡",  desc:"Absorbs incoming damage" },
+  fortify:      { label:"Fortify",      color:"#8c6a2a", icon:"🪨",  desc:"+1 AC per stack" },
+  regen:        { label:"Regen",        color:"#22aa44", icon:"💚",  desc:"Heals HP each turn, decays" },
+  flow:         { label:"Flow",         color:"#2b9dd9", icon:"💧",  desc:"Reduces next card cost" },
+  gust:         { label:"Gust",         color:"#6070C8", icon:"🌀",  desc:"Draw extra cards next turn" },
+  radiance:     { label:"Radiance",     color:"#C89010", icon:"✨",  desc:"Powers up light cards" },
+  stun:         { label:"Stun",         color:"#888888", icon:"⚡",  desc:"Skips creature's next turn" },
+  slow:         { label:"Slow",         color:"#7a6a9a", icon:"🐢",  desc:"Reduces energy this turn" },
+  weak:         { label:"Weak",         color:"#c05050", icon:"💔",  desc:"Reduces damage dealt" },
+  blind:        { label:"Blind",        color:"#555555", icon:"👁",  desc:"-4 to hit rolls" },
+  evasion:      { label:"Evasion",      color:"#6070C8", icon:"💨",  desc:"+4 AC vs attacks" },
+  thorns:       { label:"Thorns",       color:"#2a6a2a", icon:"🌵",  desc:"Reflects damage to attackers" },
+  shred:        { label:"Shred",        color:"#8a4a1a", icon:"🩸",  desc:"-2 AC per stack" },
+  waterlogged:  { label:"Waterlogged",  color:"#1a6a9a", icon:"💦",  desc:"Amplifies fire damage taken" },
+  energy_drain: { label:"Drained",      color:"#4a2a6a", icon:"🔋",  desc:"Loses energy next turn" },
+  death_mark:   { label:"Marked",       color:"#330033", icon:"💀",  desc:"Doubles next damage taken" },
+  immune:       { label:"Immune",       color:"#d4aa00", icon:"⭐",  desc:"Immune to status effects" },
 };
 
 const MOCK_STATE = {
@@ -263,6 +271,15 @@ function CreatureSilhouette({ type, creatureId, size = 96, flip = false, fainted
 // ─── POKÉMON-STYLE HP BAR PANEL ──────────────────────────────
 
 function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
+  const prevHp = useRef(creature.currentHp);
+  const [hitFlash, setHitFlash] = useState(false);
+  useEffect(() => {
+    if (creature.currentHp < prevHp.current) {
+      setHitFlash(true);
+      setTimeout(() => setHitFlash(false), 400);
+    }
+    prevHp.current = creature.currentHp;
+  }, [creature.currentHp]);
   const col    = TYPE_COLORS[creature.type] || TYPE_COLORS.colorless;
   const pct    = hpPercent(creature.currentHp, creature.maxHp);
   const barCol = hpBarColor(pct);
@@ -316,14 +333,15 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
         </div>
       </div>
 
-      {/* Status effects — always rendered at fixed height so panel never resizes */}
+      {/* Status effects row */}
       <div style={{
-        height: 26, marginBottom: 4, flexShrink: 0,
-        display:"flex", gap:3, alignItems:"center", overflow:"hidden",
+        minHeight: 24, marginBottom: 4, flexShrink: 0,
+        display:"flex", gap:3, alignItems:"center", flexWrap:"wrap",
       }}>
+        {(() => { if (creature.statusEffects.length > 0) console.warn("[STATUS BADGE]", creature.name, JSON.stringify(creature.statusEffects)); })()}
         {creature.statusEffects.map((e, i) => {
           const m = STATUS_META[e.type] || { color:"#888", icon:"?", label:"Unknown", desc:"" };
-          const tipLabel = `${m.label}${e.stacks > 1 ? ` ×${e.stacks}` : ""}${m.desc ? ` — ${m.desc}` : ""}`;
+          const tipLabel = `${m.label} ×${e.stacks}${m.desc ? ` — ${m.desc}` : ""}`;
           return (
             <Tip key={i} label={tipLabel}>
               <span style={{
@@ -333,14 +351,13 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
                 border:`1px solid ${m.color}cc`,
                 cursor:"default",
                 display:"inline-flex", alignItems:"center", gap:2,
-                boxShadow:`0 1px 3px ${m.color}55`,
+                boxShadow:`0 1px 3px ${m.color}55, 0 0 8px ${m.color}44`,
                 flexShrink:0,
                 height:20, boxSizing:"border-box",
+                animation:"statusPop 0.3s ease-out",
               }}>
                 <span style={{fontSize:12, lineHeight:1}}>{m.icon}</span>
-                {e.stacks > 1 && (
-                  <span style={{fontSize:8, fontWeight:900}}>×{e.stacks}</span>
-                )}
+                <span style={{fontSize:8, fontWeight:900, lineHeight:1}}>×{e.stacks}</span>
               </span>
             </Tip>
           );
@@ -369,6 +386,7 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
           height:8, background: isEnemy ? "#0A0A06" : "#C8C0A0",
           borderRadius:4, overflow:"hidden",
           border:`1px solid ${isEnemy ? "#302818" : "#A09878"}`,
+          animation: hitFlash ? "hpFlash 0.35s ease" : "none",
         }}>
           <div style={{
             height:"100%", width:`${pct}%`,
@@ -850,28 +868,144 @@ function RelicBar({ relicIds }) {
 
 // ─── BATTLE TEXT BOX ─────────────────────────────────────────
 
+function classifyMessage(msg) {
+  if (!msg) return { color: "#302810", icon: "", bold: false };
+  const m = msg.toLowerCase();
+  if (m.includes("miss!") || m.includes("fails to connect"))
+    return { color: "#807060", icon: "💨", bold: false };
+  if (m.includes("damage") || m.includes("hits") || m.includes("hit!"))
+    return { color: "#C03010", icon: "⚔️", bold: true };
+  if (m.includes("fainted"))
+    return { color: "#801020", icon: "💀", bold: true };
+  if (m.includes("victory") || m.includes("defeat"))
+    return { color: "#D04020", icon: "🏆", bold: true };
+  if (m.includes("ignite") || m.includes("burn") || m.includes("🔥"))
+    return { color: "#DD5500", icon: "🔥", bold: true };
+  if (m.includes("poison") || m.includes("☠"))
+    return { color: "#207030", icon: "☠", bold: true };
+  if (m.includes("stun") || m.includes("stunned"))
+    return { color: "#6050A0", icon: "⚡", bold: true };
+  if (m.includes("shield") || m.includes("defend"))
+    return { color: "#2060B0", icon: "🛡", bold: false };
+  if (m.includes("heal") || m.includes("regen") || m.includes("regenerate"))
+    return { color: "#208840", icon: "💚", bold: false };
+  if (m.includes("super effective"))
+    return { color: "#C05000", icon: "💥", bold: true };
+  if (m.includes("not very effective"))
+    return { color: "#806040", icon: "↙", bold: false };
+  if (m.includes("draws") || m.includes("draw "))
+    return { color: "#206080", icon: "🃏", bold: false };
+  if (m.includes("plays ") || m.includes("uses "))
+    return { color: "#404878", icon: "▶", bold: false };
+  if (m.includes("inflicts") || m.includes("gains") || m.includes("afflicted"))
+    return { color: "#805020", icon: "✦", bold: true };
+  if (m.includes("player") || m.includes("begins") || m.includes("---"))
+    return { color: "#908060", icon: "", bold: false };
+  if (m.includes("energy"))
+    return { color: "#907020", icon: "⚡", bold: false };
+  return { color: "#302810", icon: "", bold: false };
+}
+
 function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onEndTurn, isPlayerTurn, isEnemyStep, onAdvanceQueue, energy, maxEnergy = 3 }) {
   const ref = useRef(null);
+  // Track which log index was the "newest" last render so we only animate truly new entries
+  const prevLogLen = useRef(log.length);
+  const newFromIdx = prevLogLen.current;
   useEffect(() => {
+    prevLogLen.current = log.length;
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
   }, [log]);
 
+  // Show last 8 messages; filter out bare turn-separator lines from history (keep them if newest)
+  const allVisible = log.slice(-8);
+
   return (
     <div style={{
-      background:"#E8E8D0",
-      border:"4px solid #807860",
+      background:"linear-gradient(160deg, #1A1610 0%, #120F08 100%)",
+      border:"2px solid #5A4E32",
       borderRadius:8,
-      padding:"12px 14px 10px",
-      boxShadow:"inset 0 1px 0 rgba(255,255,255,0.55), 3px 3px 0 rgba(128,120,96,0.35)",
+      padding:"8px 12px 10px",
+      boxShadow:"inset 0 0 30px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.5)",
+      position:"relative",
     }}>
-      {/* Log */}
+      {/* Subtle top scan-line texture */}
+      <div style={{
+        position:"absolute", inset:0, borderRadius:7, pointerEvents:"none",
+        background:"repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)",
+      }}/>
+
+      {/* Log area */}
       <div ref={ref} style={{
-        height:50, overflowY:"auto",
-        fontSize:13, color:"#302810",
-        lineHeight:1.65, marginBottom:10,
+        height:80, overflowY:"auto", overflowX:"hidden",
+        marginBottom:8, display:"flex", flexDirection:"column", gap:1,
+        scrollbarWidth:"none",
       }}>
-        <div style={{ opacity:0.45, fontSize:11 }}>{log[log.length - 2] || ""}</div>
-        <div style={{ fontWeight:700 }}>▸ {log[log.length - 1] || ""}</div>
+        {allVisible.map((msg, i) => {
+          const globalIdx = log.length - allVisible.length + i; // position in full log
+          const isNew = globalIdx >= newFromIdx;
+          const age = allVisible.length - 1 - i; // 0 = newest
+          const { color, icon, bold } = classifyMessage(msg);
+          const isTurn = msg.startsWith("---") || msg.includes("Player ends") || msg.includes("Enemy turn ends");
+
+          if (isTurn) {
+            return (
+              <div key={globalIdx} style={{
+                fontSize:8, color: age === 0 ? "#8A7A50" : "#4A3E28",
+                letterSpacing:"0.2em", textAlign:"center",
+                padding:"1px 0 2px",
+                opacity: Math.max(0.2, 1 - age * 0.25),
+                fontFamily:"'Courier New', monospace",
+                textTransform:"uppercase",
+                animation: isNew ? "logFadeIn 0.3s ease-out" : "none",
+              }}>── {msg.replace(/---/g,"").trim()} ──</div>
+            );
+          }
+
+          // Opacity cascade: newest = 1, each step back fades
+          const opacity = age === 0 ? 1
+            : age === 1 ? 0.72
+            : age === 2 ? 0.52
+            : age === 3 ? 0.36
+            : age === 4 ? 0.24
+            : 0.15;
+
+          // Color: newest gets full type color, older shift to warm grey
+          const msgColor = age === 0 ? color
+            : age === 1 ? "#9A8868"
+            : "#6A5A42";
+
+          const fontSize = age === 0 ? 13 : age === 1 ? 12 : 11;
+          const fontWeight = age === 0 && bold ? 800 : age === 0 ? 600 : 400;
+
+          // Only animate entries that are truly new this render
+          const anim = isNew
+            ? (age === 0 && bold
+                ? "logPop 0.32s cubic-bezier(0.34,1.56,0.64,1) forwards"
+                : "logSlideIn 0.25s ease-out forwards")
+            : "none";
+
+          return (
+            <div key={globalIdx} style={{
+              display:"flex", alignItems:"baseline", gap:4,
+              fontSize, fontWeight,
+              color: msgColor,
+              opacity,
+              lineHeight: 1.5,
+              paddingLeft: 4,
+              borderLeft: age === 0 ? `2px solid ${color}99` : age === 1 ? "2px solid #4A3E2855" : "2px solid transparent",
+              animation: anim,
+              textShadow: age === 0 && bold ? `0 0 10px ${color}55` : "none",
+              letterSpacing: age === 0 ? "0.01em" : "normal",
+              transition: "opacity 0.35s ease, color 0.35s ease",
+            }}>
+              {age === 0 && icon && (
+                <span style={{fontSize:12, lineHeight:1, flexShrink:0}}>{icon}</span>
+              )}
+              {age === 0 && <span style={{color:"#7A6A48", fontSize:11}}>▸</span>}
+              <span>{msg}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Controls */}
@@ -975,6 +1109,35 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
   const [enemyQueue, setEnemyQueue] = useState([]); // [{newState, attackerSlot, messages}]
   const [hoveredCard, setHoveredCard]  = useState(null); // {cardId, x, y, slotIdx}
   const [attackFlash, setAttackFlash] = useState(null); // slotIdx of attacking enemy
+  const [floats, setFloats]   = useState([]);   // [{id, text, x, y, color, big}]
+  const floatIdRef = useRef(0);
+
+  function spawnFloat(text, slotRef, color = "#FF4422", big = false, anim = "floatUp") {
+    // slotRef can be a ref or a ref array (pick first valid)
+    const el = Array.isArray(slotRef?.current)
+      ? slotRef.current.find(Boolean)
+      : slotRef?.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const id = ++floatIdRef.current;
+    const x = rect.left + rect.width * 0.5 + (Math.random() - 0.5) * 28;
+    const y = rect.top + rect.height * 0.28 + (Math.random() - 0.5) * 12;
+    setFloats(f => [...f, { id, text, x, y, color, big, anim }]);
+    setTimeout(() => setFloats(f => f.filter(fl => fl.id !== id)), 1300);
+  }
+
+  function spawnParticles(slotRef, color = "#FF4422", count = 8) {
+    const el = Array.isArray(slotRef?.current)
+      ? slotRef.current.find(Boolean)
+      : slotRef?.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width * 0.5;
+    const cy = rect.top + rect.height * 0.4;
+    const id = ++floatIdRef.current;
+    setFloats(f => [...f, { id, isParticle: true, cx, cy, color, count }]);
+    setTimeout(() => setFloats(f => f.filter(fl => fl.id !== id)), 700);
+  }
   const isPlayerTurn = state.phase === "player";
   const isEnemyStep  = state.phase === "enemy_step";
 
@@ -987,34 +1150,21 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
         setTimeout(() => {
           setState(p => {
             if (p.phase !== "enemy") return p;
-            let afterEnemy;
-            try { afterEnemy = runEnemyTurn(p); }
-            catch(e) { console.warn("runEnemyTurn error:", e); afterEnemy = { ...p, phase:"player", turn:p.turn+1 }; }
-
-            const prevLogLen = p.log.length;
-            const newMessages = afterEnemy.log.slice(prevLogLen);
-            const steps = [];
-            let batch = [];
-            for (const msg of newMessages) {
-              batch.push(msg);
-              if (msg.includes('damage') || msg.includes('fainted') ||
-                  msg.includes('Miss!') || msg.includes('ignite') || msg.includes('poison')) {
-                steps.push({ messages: [...batch], stateAfter: afterEnemy });
-                batch = [];
-              }
+            let steps, afterEnemy;
+            try {
+              const result = runEnemyTurnSteps(p);
+              steps = result.steps;
+              afterEnemy = result.finalState;
+            } catch(e) {
+              console.warn("runEnemyTurnSteps error:", e);
+              return beginPlayerTurn(p);
             }
-            if (batch.length > 0) steps.push({ messages: [...batch], stateAfter: afterEnemy });
 
             if (steps.length === 0) {
-              if (checkCombatEnd(afterEnemy)) return afterEnemy;
-              const extraDraws = getRelicExtraDraws(relics);
-              const newActive = afterEnemy.player.active.map(s => extraDraws > 0 ? drawCards(s, extraDraws) : s);
-              return { ...afterEnemy, phase:"player", sharedEnergy:BASE_ENERGY_PER_TURN,
-                       turn:(afterEnemy.turn??1)+1, player:{...afterEnemy.player,active:newActive},
-                       combatFlags:{...(afterEnemy.combatFlags??{}),cardsPlayedThisTurn:0} };
+              return beginPlayerTurn(afterEnemy);
             }
 
-            setEnemyQueue(steps.slice(1).map((s,i) => ({...s, isFinal: i===steps.length-2, resolvedState:afterEnemy})));
+            setEnemyQueue(steps.slice(1));
             const firstStep = steps[0];
             const attackMsg = firstStep.messages.find(m => m.includes('plays'));
             if (attackMsg) {
@@ -1024,7 +1174,14 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
               setAttackFlash(aSlot);
               setTimeout(() => setAttackFlash(null), 400);
             }
-            return { ...p, phase:"enemy_step", log:[...p.log.slice(-20),...firstStep.messages], _pendingResolvedState:afterEnemy };
+            return {
+              ...firstStep.state,
+              phase: 'enemy_step',
+              log: [...firstStep.state.log.slice(-20)],
+              enemy: firstStep.state.enemy,
+              player: firstStep.state.player,
+              _pendingResolvedState: afterEnemy,
+            };
           });
         }, 900);
       }, 300);
@@ -1039,6 +1196,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
   const [dragRender, setDragRender] = useState(null); // mirrors dragRef for rendering
   const [burstAt, setBurstAt]       = useState(null);
   const enemySlotRefs               = useRef([]);
+  const playerSlotRefs              = useRef([]);
   const rootRef                     = useRef(null);
 
   // Convenience: current drag for render logic
@@ -1335,6 +1493,18 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
       },
     };
 
+    // Spawn float for damage dealt by player
+    const lastMsg = afterPlay.log[afterPlay.log.length - 1] ?? "";
+    const dmgM = lastMsg.match(/(\d+) damage/);
+    if (dmgM) spawnFloat(`-${dmgM[1]}`, enemySlotRefs, "#FFAA00", true);
+    const statusM = lastMsg.match(/gains \d+ (\w+)/);
+    if (statusM) {
+      const sColors = {ignite:"#FF4400",poison:"#44AA44",stun:"#8866FF",slow:"#776699",weak:"#AA4466",blind:"#666644",shred:"#884422"};
+      const sIcons = {ignite:"🔥",poison:"☠",stun:"⚡",slow:"🐢",weak:"💔",blind:"👁",shred:"🩸"};
+      spawnFloat(sIcons[statusM[1]] || "✦", enemySlotRefs, sColors[statusM[1]] || "#886644");
+    }
+    if (lastMsg.includes("Miss!")) spawnFloat("MISS", enemySlotRefs, "#888866");
+
     setState(afterPlay);
     setSelected(null); setTargeting(false);
     setState(p => { checkCombatEnd(p); return p; });
@@ -1383,6 +1553,18 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
       ...afterPlay,
       log: [...afterPlay.log.slice(-20)],
     };
+
+    // Spawn float for damage dealt by player
+    const lastMsg = afterPlay.log[afterPlay.log.length - 1] ?? "";
+    const dmgM = lastMsg.match(/(\d+) damage/);
+    if (dmgM) spawnFloat(`-${dmgM[1]}`, enemySlotRefs, "#FFAA00", true);
+    const statusM = lastMsg.match(/gains \d+ (\w+)/);
+    if (statusM) {
+      const sColors = {ignite:"#FF4400",poison:"#44AA44",stun:"#8866FF",slow:"#776699",weak:"#AA4466",blind:"#666644",shred:"#884422"};
+      const sIcons = {ignite:"🔥",poison:"☠",stun:"⚡",slow:"🐢",weak:"💔",blind:"👁",shred:"🩸"};
+      spawnFloat(sIcons[statusM[1]] || "✦", enemySlotRefs, sColors[statusM[1]] || "#886644");
+    }
+    if (lastMsg.includes("Miss!")) spawnFloat("MISS", enemySlotRefs, "#888866");
 
     setState(afterPlay);
     setSelected(null); setTargeting(false);
@@ -1433,85 +1615,94 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
     return { ...slot, hand, drawPile, discardPile };
   }
 
+
+  // ─── Transition to player turn ───────────────────────────────────────────
+  // Discards hand and draws fresh cards. Does NOT tick status effects —
+  // statuses tick at END of player turn (in endTurn) so badges show all turn.
+  function beginPlayerTurn(afterEnemyState) {
+    if (checkCombatEnd(afterEnemyState)) return afterEnemyState;
+
+    // Expire player shields first (they lasted through the full enemy turn, now they go)
+    const afterShieldExpiry = {
+      ...afterEnemyState,
+      player: {
+        ...afterEnemyState.player,
+        active: afterEnemyState.player.active.map(slot => {
+          if (!slot) return slot;
+          const statusEffects = slot.creature.statusEffects.filter(e => e.type !== 'shield');
+          return { ...slot, creature: { ...slot.creature, statusEffects } };
+        }),
+      },
+    };
+
+    // Tick player status effects at START of player turn
+    // (ignite damage ticks, stacks decay — player sees badge then HP drop)
+    let tickedState = tickPlayerStatuses(afterShieldExpiry);
+    if (checkCombatEnd(tickedState)) return tickedState;
+
+    // Discard hand and draw CARDS_PER_ROUND for each active player slot
+    const extraDraws = getRelicExtraDraws(relics);
+    const newActive = tickedState.player.active.map(slot => {
+      if (!slot) return slot;
+      // Discard entire hand first
+      const discarded = {
+        ...slot,
+        discardPile: [...slot.discardPile, ...slot.hand],
+        hand: [],
+      };
+      let drawn = drawCards(discarded, CARDS_PER_ROUND);
+      if (extraDraws > 0) drawn = drawCards(drawn, extraDraws);
+      return drawn;
+    });
+
+    const activeCount = newActive.filter(s => s && s.creature.currentHp > 0).length;
+    return {
+      ...tickedState,
+      phase: 'player',
+      sharedEnergy: BASE_ENERGY_PER_TURN * Math.max(1, activeCount),
+      turn: (afterEnemyState.turn ?? 1) + 1,
+      player: { ...tickedState.player, active: newActive },
+      log: [...tickedState.log, `--- Turn ${(afterEnemyState.turn ?? 1) + 1} (player) ---`],
+      combatFlags: { ...(tickedState.combatFlags ?? {}), cardsPlayedThisTurn: 0 },
+    };
+  }
+
   function endTurn() {
     log("Player ended the turn.");
     setState(p => ({ ...p, phase:"enemy", sharedEnergy:0 }));
 
     setTimeout(() => {
       setState(p => {
-        // Run enemy turn — get final state
-        let afterEnemy;
-        try { afterEnemy = runEnemyTurn(p); }
-        catch(e) {
-          console.warn("runEnemyTurn error:", e);
-          afterEnemy = { ...p, phase:"player", turn: p.turn+1 };
-        }
-
-        // Extract the new log lines added during enemy turn
-        const prevLogLen = p.log.length;
-        const newMessages = afterEnemy.log.slice(prevLogLen);
-
-        // Build a step-through queue: each entry is the full resolved state
-        // plus the messages that happened, so player can read them one at a time
-        // We split on attack boundaries (lines containing "plays" or "damage" or "ignite")
-        const steps = [];
-        let batch = [];
-        for (const msg of newMessages) {
-          batch.push(msg);
-          // Break into a step after each meaningful enemy action
-          if (msg.includes('damage') || msg.includes('fainted') || 
-              msg.includes('Miss!') || msg.includes('Ignite') ||
-              msg.includes('ignite') || msg.includes('poison') || msg.includes('burn')) {
-            steps.push({ messages: [...batch], stateAfter: afterEnemy });
-            batch = [];
-          }
-        }
-        // Any remaining messages
-        if (batch.length > 0) {
-          steps.push({ messages: [...batch], stateAfter: afterEnemy });
-        }
+        // Run enemy turn step-by-step
+        // Note: player shields persist through the enemy turn — they expire at the START
+        // of the player's next turn (in beginPlayerTurn, after tickPlayerStatuses)
+        const { steps, finalState: afterEnemy } = runEnemyTurnSteps(p);
 
         if (steps.length === 0) {
-          // No interesting enemy actions — go straight to player turn
-          if (checkCombatEnd(afterEnemy)) return afterEnemy;
-          const extraDraws = getRelicExtraDraws(relics);
-          const newActive = afterEnemy.player.active.map(slot =>
-            extraDraws > 0 ? drawCards(slot, extraDraws) : slot
-          );
-          return {
-            ...afterEnemy,
-            phase: "player",
-            sharedEnergy: BASE_ENERGY_PER_TURN,
-            turn: (afterEnemy.turn ?? 1) + 1,
-            player: { ...afterEnemy.player, active: newActive },
-            combatFlags: { ...(afterEnemy.combatFlags ?? {}), cardsPlayedThisTurn: 0 },
-          };
+          // Enemy did nothing — go straight to player turn
+          return beginPlayerTurn(afterEnemy);
         }
 
-        // Queue up the steps — first step shown immediately, rest on CONTINUE
-        // Show first step's messages in log, keep phase as enemy until all steps done
-        setEnemyQueue(steps.slice(1).map((s, i) => ({
-          ...s,
-          isFinal: i === steps.length - 2,
-          resolvedState: afterEnemy,
-        })));
+        // Queue all steps after the first
+        // Each step carries its own state so displayState updates live per CONTINUE
+        setEnemyQueue(steps.slice(1));
 
         const firstStep = steps[0];
-        // Flash animation: detect which enemy slot attacked
         const attackMsg = firstStep.messages.find(m => m.includes('plays'));
         if (attackMsg) {
-          // Determine which slot attacked (slot 0 or 1)
-          const slot0name = p.enemy.active[0]?.creature?.name;
-          const slot1name = p.enemy.active[1]?.creature?.name;
-          const attackingSlot = attackMsg.includes(slot0name) ? 0 : attackMsg.includes(slot1name) ? 1 : 0;
-          setAttackFlash(attackingSlot);
+          const s0 = p.enemy.active[0]?.creature?.name;
+          const s1 = p.enemy.active[1]?.creature?.name;
+          const aSlot = attackMsg.includes(s0) ? 0 : attackMsg.includes(s1) ? 1 : 0;
+          setAttackFlash(aSlot);
           setTimeout(() => setAttackFlash(null), 400);
         }
 
         return {
-          ...p,
-          phase: "enemy_step", // special phase: show log + CONTINUE button
-          log: [...p.log.slice(-20), ...firstStep.messages],
+          ...firstStep.state,
+          phase: 'enemy_step',
+          log: [...firstStep.state.log.slice(-20)],
+          enemy: firstStep.state.enemy,
+          player: firstStep.state.player,
           _pendingResolvedState: afterEnemy,
         };
       });
@@ -1525,79 +1716,9 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
         const resolved = p._pendingResolvedState ?? p;
         if (checkCombatEnd(resolved)) return resolved;
 
-        // Player status processing
-        const processedActive = resolved.player.active.map(slot => {
-          const newEffects = [];
-          let updated = { ...slot, creature: { ...slot.creature }, stunned: false };
-          const statusLog = [];
-          for (const effect of slot.creature.statusEffects) {
-            switch(effect.type) {
-              case 'ignite': case 'burn': {
-                const dmg = effect.stacks;
-                updated = { ...updated, creature: { ...updated.creature, currentHp: Math.max(0, updated.creature.currentHp - dmg) }};
-                statusLog.push(`${slot.creature.name} takes ${dmg} ${effect.type} damage!`);
-                if (effect.stacks - 1 > 0) newEffects.push({ ...effect, stacks: effect.stacks - 1 });
-                break;
-              }
-              case 'poison': {
-                const dmg = effect.stacks;
-                updated = { ...updated, creature: { ...updated.creature, currentHp: Math.max(0, updated.creature.currentHp - dmg) }};
-                statusLog.push(`${slot.creature.name} takes ${dmg} poison damage!`);
-                newEffects.push(effect);
-                break;
-              }
-              case 'regen': {
-                const heal = effect.stacks;
-                const newHp = Math.min(updated.creature.maxHp, updated.creature.currentHp + heal);
-                updated = { ...updated, creature: { ...updated.creature, currentHp: newHp }};
-                statusLog.push(`${slot.creature.name} regenerates ${heal} HP.`);
-                if (effect.stacks - 1 > 0) newEffects.push({ ...effect, stacks: effect.stacks - 1 });
-                break;
-              }
-              case 'gust': {
-                updated = drawCards(updated, effect.stacks);
-                statusLog.push(`${slot.creature.name} gains ${effect.stacks} Gust draws!`);
-                break;
-              }
-              case 'stun': {
-                updated = { ...updated, stunned: true };
-                statusLog.push(`${slot.creature.name} is stunned!`);
-                if (effect.stacks - 1 > 0) newEffects.push({ ...effect, stacks: effect.stacks - 1 });
-                break;
-              }
-              default:
-                newEffects.push(effect);
-            }
-          }
-          updated = { ...updated, creature: { ...updated.creature, statusEffects: newEffects }};
-          return { slot: updated, statusLog };
-        });
-
-        const statusLogLines = processedActive.flatMap(x => x.statusLog);
-        const processedSlots = processedActive.map(x => x.slot);
-
-        let afterStatus = {
-          ...resolved,
-          player: { ...resolved.player, active: processedSlots },
-          log: [...resolved.log.slice(-20), ...statusLogLines],
-          _pendingResolvedState: undefined,
-        };
-        afterStatus = checkFaints(afterStatus);
-        if (checkCombatEnd(afterStatus)) return afterStatus;
-
-        const extraDraws = getRelicExtraDraws(relics);
-        const newActive = afterStatus.player.active.map(slot =>
-          extraDraws > 0 ? drawCards(slot, extraDraws) : slot
-        );
-
-        return {
-          ...afterStatus,
-          phase: "player",
-          sharedEnergy: BASE_ENERGY_PER_TURN,
-          turn: (afterStatus.turn ?? 1) + 1,
-          player: { ...afterStatus.player, active: newActive },
-          combatFlags: { ...(afterStatus.combatFlags ?? {}), cardsPlayedThisTurn: 0 },
-        };
+        // Use beginPlayerTurn to run all player status effects via combatEngine
+        const withClean = { ...resolved, _pendingResolvedState: undefined };
+        return beginPlayerTurn(withClean);
       });
     } else {
       // Show next step
@@ -1605,24 +1726,81 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
       setEnemyQueue(remaining);
 
       // Flash attack animation
-      const attackMsg = nextStep.messages?.find(m => m.includes('plays'));
-      if (attackMsg) {
+      const attackMsg2 = nextStep.messages?.find(m => m.includes('plays'));
+      if (attackMsg2) {
         const slot0name = state.enemy.active[0]?.creature?.name;
         const slot1name = state.enemy.active[1]?.creature?.name;
-        const attackingSlot = attackMsg.includes(slot0name) ? 0 : attackMsg.includes(slot1name) ? 1 : 0;
+        const attackingSlot = attackMsg2.includes(slot0name) ? 0 : attackMsg2.includes(slot1name) ? 1 : 0;
         setAttackFlash(attackingSlot);
         setTimeout(() => setAttackFlash(null), 400);
       }
 
+      // Spawn floating numbers + particles based on what this step contained
+      const msgs = nextStep.messages ?? [];
+      msgs.forEach(msg => {
+        const dmgMatch = msg.match(/(\d+) damage to (\S+)/);
+        if (dmgMatch) {
+          const targetName = dmgMatch[2].replace(/[^a-zA-Z]/g,'').toLowerCase();
+          const dmg = parseInt(dmgMatch[1]);
+          const isBig = dmg >= 10;
+          // Player took damage
+          const pIdx = (nextStep.state?.player?.active ?? []).findIndex(
+            s => s?.creature?.name?.toLowerCase().startsWith(targetName)
+          );
+          if (pIdx >= 0) {
+            spawnFloat(`-${dmg}`, playerSlotRefs, isBig ? "#FF1100" : "#FF4422", true, isBig ? "floatUpBig" : "floatUp");
+            spawnParticles(playerSlotRefs, "#FF3300", isBig ? 10 : 6);
+          }
+          // Enemy took damage
+          const eIdx = (nextStep.state?.enemy?.active ?? []).findIndex(
+            s => s?.creature?.name?.toLowerCase().startsWith(targetName)
+          );
+          if (eIdx >= 0) {
+            spawnFloat(`-${dmg}`, enemySlotRefs, isBig ? "#FF6600" : "#FFAA44", true, isBig ? "floatUpBig" : "floatUp");
+            spawnParticles(enemySlotRefs, "#FF6600", isBig ? 10 : 6);
+          }
+        }
+        // Status applied — figure out target from message context
+        const isOnPlayer = msg.includes('on ') && (nextStep.state?.player?.active ?? []).some(
+          s => s && msg.toLowerCase().includes(s.creature.name.toLowerCase())
+        );
+        const statusRef = isOnPlayer ? playerSlotRefs : enemySlotRefs;
+        const statusColor = isOnPlayer ? "#FF4422" : "#FF8844";
+        if (msg.includes('ignite') && !msg.includes('damage')) {
+          spawnFloat('🔥', statusRef, "#FF6600");
+          spawnParticles(statusRef, "#FF6600", 6);
+        }
+        if (msg.includes('poison') && !msg.includes('damage')) {
+          spawnFloat('☠', statusRef, "#44AA44");
+          spawnParticles(statusRef, "#44AA44", 5);
+        }
+        if (msg.includes('stun') && !msg.includes('stunned and')) spawnFloat('⚡', statusRef, "#9966FF");
+        if (msg.includes('Shield') || msg.includes('gains') && msg.includes('shield')) spawnFloat('🛡', statusRef, "#4488FF");
+        if (msg.includes('Miss!')) spawnFloat('MISS!', enemySlotRefs, "#888866", false);
+        if (msg.includes('heals') || msg.includes('regenerate')) spawnFloat('+HP', statusRef, "#44BB44", false, "floatUpHeal");
+        if (msg.includes('slow')) spawnFloat('🐢', statusRef, "#7a6a9a");
+        if (msg.includes('weak')) spawnFloat('💔', statusRef, "#cc4444");
+        if (msg.includes('blind')) spawnFloat('👁', statusRef, "#555555");
+        if (msg.includes('shred')) spawnFloat('🩸', statusRef, "#8a4a1a");
+        if (msg.includes('death_mark') || msg.includes('Marked')) spawnFloat('💀', statusRef, "#330033");
+      });
+
       setState(p => ({
         ...p,
-        log: [...p.log.slice(-20), ...(nextStep.messages ?? [])],
+        enemy:  nextStep.state?.enemy  ?? p.enemy,
+        player: nextStep.state?.player ?? p.player,
+        log: [...(nextStep.state?.log ?? p.log).slice(-20)],
       }));
     }
   }
 
 
   const selDef = selectedCard ? MOCK_CARDS[selectedCard.cardId] : null;
+  // During enemy_step phase, show creature panels from the resolved state
+  // so status badges are visible while the player clicks through CONTINUE
+  // displayState: always use state directly.
+  // During enemy_step, state.enemy/player are updated per-action in advanceEnemyQueue.
+  const displayState = state;
 
   return (
     <div ref={rootRef} style={{
@@ -1670,9 +1848,9 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
           display:"flex", justifyContent:"center", alignItems:"flex-end",
           gap:20, marginTop:22, marginBottom:6,
         }}>
-          {state.enemy.active.map((slot, i) => (
+          {displayState.enemy.active.map((slot, i) => (
             <div key={i} ref={el => enemySlotRefs.current[i] = el}
-              style={{ animation: attackFlash === i ? 'enemyAttack 0.4s ease-in-out' : 'none' }}>
+              style={{ animation: attackFlash === i ? 'enemyAttack 0.4s ease-in-out' : 'none', transition:"filter 0.15s" }}>
               <BattleSlot
                 slot={slot} isEnemy
                 onClick={() => playOnTarget(i)}
@@ -1692,10 +1870,10 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
           alignItems:"flex-start", gap:10, marginTop:8,
         }}>
           <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-            {state.player.active.map((slot, slotIdx) => {
+            {displayState.player.active.map((slot, slotIdx) => {
               const col = TYPE_COLORS[slot.creature.type] || TYPE_COLORS.colorless;
               return (
-                <div key={slotIdx} style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
+                <div key={slotIdx} ref={el => playerSlotRefs.current[slotIdx] = el} style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
                   {/* Creature silhouette + info card */}
                   <BattleSlot slot={slot} isEnemy={false} isTargeted={false} />
 
@@ -1959,31 +2137,102 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
         );
       })()}
 
+      {/* Floating damage/status numbers + particle bursts — fixed position overlay */}
+      {floats.map(fl => {
+        if (fl.isParticle) {
+          // Particle burst: render N dots flying outward
+          const angles = Array.from({length: fl.count}, (_, i) => (i / fl.count) * 360);
+          return (
+            <div key={fl.id} style={{ position:"fixed", left:fl.cx, top:fl.cy, pointerEvents:"none", zIndex:9998 }}>
+              {angles.map((a, i) => {
+                const rad = a * Math.PI / 180;
+                const dist = 28 + Math.random() * 22;
+                const dx = Math.cos(rad) * dist;
+                const dy = Math.sin(rad) * dist;
+                return (
+                  <div key={i} style={{
+                    position:"absolute",
+                    width: 5 + Math.random()*4, height: 5 + Math.random()*4,
+                    borderRadius:"50%",
+                    background: fl.color,
+                    boxShadow: `0 0 6px ${fl.color}`,
+                    transform: "translate(-50%,-50%)",
+                    animation: "particleFly 0.6s ease-out forwards",
+                    "--dx": `${dx}px`,
+                    "--dy": `${dy}px`,
+                    animationDelay: `${i * 15}ms`,
+                  }} />
+                );
+              })}
+              {/* Impact ring */}
+              <div style={{
+                position:"absolute",
+                width:30, height:30,
+                borderRadius:"50%",
+                border: `3px solid ${fl.color}`,
+                transform:"translate(-50%,-50%)",
+                animation: "impactRing 0.5s ease-out forwards",
+                pointerEvents:"none",
+              }} />
+            </div>
+          );
+        }
+        const animName = fl.anim || (fl.big ? "floatUpBig" : "floatUp");
+        const duration = fl.big ? "1.0s" : "1.15s";
+        return (
+          <div key={fl.id} style={{
+            position:"fixed",
+            left: fl.x,
+            top: fl.y,
+            pointerEvents:"none",
+            zIndex:9999,
+            fontFamily:"'Courier New', monospace",
+            fontWeight:900,
+            fontSize: fl.big ? 26 : 15,
+            color: fl.color,
+            textShadow:`0 0 10px ${fl.color}CC, 0 0 20px ${fl.color}55, 0 2px 4px rgba(0,0,0,0.9)`,
+            animation:`${animName} ${duration} ease-out forwards`,
+            whiteSpace:"nowrap",
+            letterSpacing: fl.big ? "0.04em" : "0.02em",
+            WebkitTextStroke: fl.big ? `1px ${fl.color}` : "none",
+          }}>
+            {fl.text}
+          </div>
+        );
+      })}
+
       <style>{`
+        /* ── Creature animations ── */
         @keyframes pokePulse {
-          0%  { transform: scale(1); }
-          40% { transform: scale(1.12); }
-          100%{ transform: scale(1); }
+          0%   { transform: scale(1); filter: brightness(1); }
+          30%  { transform: scale(1.18); filter: brightness(1.4) drop-shadow(0 0 8px #FFD700); }
+          100% { transform: scale(1); filter: brightness(1); }
         }
         @keyframes cardHoverPop {
-    0%   { transform: translateY(0) scale(1); }
-    100% { transform: translateY(-8px) scale(1.7); }
-  }
-  @keyframes enemyAttack {
-    0%   { transform: translateX(0) scale(1); filter: brightness(1); }
-    20%  { transform: translateX(-12px) scale(1.08); filter: brightness(1.5) hue-rotate(10deg); }
-    50%  { transform: translateX(8px) scale(1.05); filter: brightness(1.3); }
-    75%  { transform: translateX(-4px) scale(1.02); filter: brightness(1.1); }
-    100% { transform: translateX(0) scale(1); filter: brightness(1); }
-  }
-  @keyframes cardBob {
+          0%   { transform: translateY(0) scale(1); }
+          100% { transform: translateY(-8px) scale(1.7); }
+        }
+        @keyframes enemyAttack {
+          0%   { transform: translateX(0) scale(1); filter: brightness(1); }
+          15%  { transform: translateX(-18px) scale(1.12); filter: brightness(2) saturate(1.5); }
+          35%  { transform: translateX(12px) scale(1.08); filter: brightness(1.5); }
+          55%  { transform: translateX(-6px) scale(1.04); filter: brightness(1.2); }
+          75%  { transform: translateX(3px) scale(1.01); filter: brightness(1.05); }
+          100% { transform: translateX(0) scale(1); filter: brightness(1); }
+        }
+        @keyframes playerAttack {
+          0%   { transform: translateX(0) scale(1); filter: brightness(1); }
+          20%  { transform: translateX(16px) scale(1.1); filter: brightness(1.8) saturate(1.4); }
+          45%  { transform: translateX(-8px) scale(1.05); }
+          70%  { transform: translateX(4px) scale(1.02); }
+          100% { transform: translateX(0) scale(1); filter: brightness(1); }
+        }
+        @keyframes cardBob {
           0%,100% { transform: translateY(0px) rotate(0deg); }
           25%     { transform: translateY(-5px) rotate(0.8deg); }
           75%     { transform: translateY(-3px) rotate(-0.5deg); }
         }
-        @keyframes dashFlow {
-          to { stroke-dashoffset: -26; }
-        }
+        @keyframes dashFlow { to { stroke-dashoffset: -26; } }
         @keyframes targetPulse {
           0%,100% { r: 22; opacity: 0.18; }
           50%     { r: 28; opacity: 0.08; }
@@ -1995,6 +2244,133 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
         @keyframes burstCircle {
           0%   { r:18; opacity:0.6; }
           100% { r:40; opacity:0; }
+        }
+
+        /* ── Floating numbers ── */
+        @keyframes floatUp {
+          0%   { transform:translateX(-50%) translateY(0px) scale(1); opacity:1; }
+          15%  { transform:translateX(-50%) translateY(-10px) scale(1.2); opacity:1; }
+          100% { transform:translateX(-50%) translateY(-64px) scale(0.8); opacity:0; }
+        }
+        @keyframes floatUpBig {
+          0%   { transform:translateX(-50%) translateY(0px) scale(1); opacity:1; }
+          12%  { transform:translateX(-50%) translateY(-8px) scale(1.5); opacity:1; }
+          100% { transform:translateX(-50%) translateY(-80px) scale(0.7); opacity:0; }
+        }
+        @keyframes floatUpHeal {
+          0%   { transform:translateX(-50%) translateY(0px); opacity:1; }
+          20%  { transform:translateX(-50%) translateY(-12px); opacity:1; }
+          100% { transform:translateX(-50%) translateY(-56px); opacity:0; }
+        }
+
+        /* ── Battle log ── */
+        @keyframes logSlideIn {
+          0%   { opacity:0; transform:translateX(-8px) translateY(4px); }
+          60%  { opacity:1; transform:translateX(1px) translateY(0); }
+          100% { opacity:1; transform:translateX(0) translateY(0); }
+        }
+        @keyframes logPop {
+          0%   { opacity:0; transform:translateY(0) scale(0.94); }
+          40%  { opacity:1; transform:translateY(-2px) scale(1.02); }
+          100% { opacity:1; transform:translateY(0) scale(1); }
+        }
+        @keyframes logGlow {
+          0%,100% { text-shadow: none; }
+          50%     { text-shadow: 0 0 8px currentColor; }
+        }
+
+        /* ── HP bar ── */
+        @keyframes hpFlash {
+          0%   { filter: brightness(1); }
+          20%  { filter: brightness(2.2) saturate(0.2); }
+          45%  { filter: brightness(1.6) hue-rotate(20deg); }
+          100% { filter: brightness(1); }
+        }
+        @keyframes hpHealFlash {
+          0%   { filter: brightness(1); }
+          30%  { filter: brightness(1.8) hue-rotate(90deg) saturate(1.5); }
+          100% { filter: brightness(1); }
+        }
+        @keyframes hpBarShake {
+          0%,100% { transform: translateX(0); }
+          15%     { transform: translateX(-5px); }
+          30%     { transform: translateX(5px); }
+          45%     { transform: translateX(-3px); }
+          60%     { transform: translateX(3px); }
+          75%     { transform: translateX(-1px); }
+        }
+
+        /* ── Status effects ── */
+        @keyframes statusPop {
+          0%   { transform: scale(0) rotate(-15deg); opacity:0; }
+          50%  { transform: scale(1.4) rotate(5deg); opacity:1; }
+          75%  { transform: scale(0.9) rotate(-2deg); opacity:1; }
+          100% { transform: scale(1) rotate(0); opacity:1; }
+        }
+        @keyframes statusBurn {
+          0%,100% { transform: scale(1); filter: brightness(1); }
+          50%     { transform: scale(1.08); filter: brightness(1.5) hue-rotate(-10deg); }
+        }
+        @keyframes statusPoison {
+          0%,100% { transform: scale(1) rotate(0); }
+          33%     { transform: scale(1.05) rotate(3deg); }
+          66%     { transform: scale(1.05) rotate(-3deg); }
+        }
+        @keyframes statusShield {
+          0%,100% { transform: scale(1); filter: brightness(1); }
+          50%     { transform: scale(1.1); filter: brightness(1.4) drop-shadow(0 0 4px #4488FF); }
+        }
+        @keyframes statusStun {
+          0%,100% { transform: rotate(0); }
+          25%     { transform: rotate(-8deg); }
+          75%     { transform: rotate(8deg); }
+        }
+
+        /* ── Hit impact ── */
+        @keyframes shakeDmg {
+          0%,100% { transform: translateX(0) translateY(0); }
+          15%     { transform: translateX(-8px) translateY(-2px); }
+          30%     { transform: translateX(8px) translateY(2px); }
+          45%     { transform: translateX(-5px) translateY(-1px); }
+          60%     { transform: translateX(5px) translateY(1px); }
+          75%     { transform: translateX(-2px); }
+        }
+        @keyframes critShake {
+          0%,100% { transform: translateX(0) translateY(0) rotate(0); }
+          10%     { transform: translateX(-12px) translateY(-3px) rotate(-1deg); }
+          25%     { transform: translateX(12px) translateY(3px) rotate(1deg); }
+          40%     { transform: translateX(-8px) translateY(-2px) rotate(-0.5deg); }
+          60%     { transform: translateX(6px) translateY(2px); }
+          80%     { transform: translateX(-3px); }
+        }
+        @keyframes healPulse {
+          0%,100% { filter: brightness(1); }
+          40%     { filter: brightness(1.7) hue-rotate(90deg) saturate(1.5); }
+        }
+        @keyframes statusApplied {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.4); }
+          100% { transform: scale(1); }
+        }
+
+        /* ── Screen flash overlay ── */
+        @keyframes screenFlashDmg {
+          0%   { opacity:0.35; }
+          100% { opacity:0; }
+        }
+        @keyframes screenFlashHeal {
+          0%   { opacity:0.25; }
+          100% { opacity:0; }
+        }
+
+        /* ── Particle burst ── */
+        @keyframes particleFly {
+          0%   { transform: translate(0,0) scale(1); opacity:1; }
+          100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity:0; }
+        }
+        @keyframes impactRing {
+          0%   { transform: scale(0.3); opacity:0.9; }
+          100% { transform: scale(2.2); opacity:0; }
         }
         ::-webkit-scrollbar { height:4px; width:4px; }
         .tip-wrap {

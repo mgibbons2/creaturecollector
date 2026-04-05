@@ -282,9 +282,12 @@ export function resolveHitRoll(attackerStatValue, targetAC) {
  * @param {string}  defenderType   — CreatureType of the target creature
  * @returns {{ damage: number, multiplier: number, effectiveness: string }}
  */
-export function calculateDamage(baseDamage, attackerType, defenderType) {
+export function calculateDamage(baseDamage, attackerType, defenderType, defenderStatusEffects = []) {
   const multiplier = TYPE_CHART[attackerType]?.[defenderType] ?? 1.0;
-  const damage = Math.round(baseDamage * multiplier);
+  // Waterlogged amplifies fire damage by 50%
+  const waterlogged = defenderStatusEffects.find(e => e.type === 'waterlogged');
+  const waterloggedMult = (waterlogged && attackerType === 'fire') ? 1.5 : 1.0;
+  const damage = Math.round(baseDamage * multiplier * waterloggedMult);
 
   let effectiveness = 'normal';
   if (multiplier >= 2.0) effectiveness = 'super effective';
@@ -466,8 +469,34 @@ function processStatusEffectsOnTurnStart(slot) {
         break;
       }
       case 'thorns': {
-        // Thorns: reflect damage — handled in damage resolution
+        // Thorns: reflect damage back — handled in damage resolution, persists
         newEffects.push(effect);
+        break;
+      }
+      case 'immune': {
+        // Immune: prevents new status effects — persists, decays by 1
+        if (effect.stacks - 1 > 0) newEffects.push({ ...effect, stacks: effect.stacks - 1 });
+        break;
+      }
+      case 'shred': {
+        // Shred: -2 AC per stack — applied during hit resolution, decays
+        if (effect.stacks - 1 > 0) newEffects.push({ ...effect, stacks: effect.stacks - 1 });
+        break;
+      }
+      case 'waterlogged': {
+        // Waterlogged: amplifies fire damage — applied during damage calc, decays
+        if (effect.stacks - 1 > 0) newEffects.push({ ...effect, stacks: effect.stacks - 1 });
+        break;
+      }
+      case 'energy_drain': {
+        // Energy drain: -1 energy next turn — applied in beginPlayerTurn, decays
+        logEntries.push(`${name}'s energy is drained!`);
+        if (effect.stacks - 1 > 0) newEffects.push({ ...effect, stacks: effect.stacks - 1 });
+        break;
+      }
+      case 'death_mark': {
+        // Death mark: doubles next damage taken — handled in applyDamageToSlot
+        newEffects.push(effect); // persists until triggered
         break;
       }
       case 'drain': {
@@ -476,7 +505,7 @@ function processStatusEffectsOnTurnStart(slot) {
       }
 
       default:
-        // Unknown effect — preserve it
+        // Unknown effect — preserve it so it displays and doesn't get lost
         newEffects.push(effect);
     }
   }
@@ -488,6 +517,23 @@ function processStatusEffectsOnTurnStart(slot) {
   };
 
   return { updatedSlot, logEntries };
+}
+
+/**
+ * Tick status effects on all player active slots (called at end of player turn).
+ * Does not touch hand or draw pile — only processes damage/heal/decay.
+ */
+export function tickPlayerStatuses(state) {
+  const log = [...state.log];
+  const newActive = state.player.active.map(slot => {
+    if (!slot) return slot;
+    const { updatedSlot, logEntries } = processStatusEffectsOnTurnStart(slot);
+    logEntries.forEach(e => log.push(e));
+    return updatedSlot;
+  });
+  let newState = { ...state, log, player: { ...state.player, active: newActive } };
+  newState = checkFaints(newState);
+  return newState;
 }
 
 /**
@@ -592,7 +638,7 @@ export function playCard(state, slotIndex, cardId, targetSide = 'enemy', targetS
     if (hitResult.hit) {
       // Base damage + stat modifier scaled by card's damage value
       const rawDamage = (card.baseDamage ?? 0) + statModifier(rollStat);
-      const { damage, effectiveness } = calculateDamage(rawDamage, attacker.type, defender.type);
+      const { damage, effectiveness } = calculateDamage(rawDamage, attacker.type, defender.type, defender.statusEffects);
 
       log.push(
         `Hit! ${effectiveness !== 'normal' ? `(${effectiveness}) ` : ''}${damage} damage to ${defender.name}.`
@@ -685,10 +731,30 @@ export function playCard(state, slotIndex, cardId, targetSide = 'enemy', targetS
     ? { ...newState.enemy, active: updatedSideActive }
     : newState.enemy;
 
+  // When targeting player side (self-cards), merge both source and target updates
+  // updatedSourceSlot has hand/discard changes; updatedTargetSlot has status/hp changes
+  // We need both, so merge them when source === target slot
+  let finalPlayerActive = [...updatedPlayerActive];
+  if (targetSide === 'player') {
+    finalPlayerActive = finalPlayerActive.map((s, i) => {
+      if (i !== targetSlot) return s;
+      // Merge: take updatedTargetSlot (status/hp) and apply hand/discard from updatedSourceSlot
+      if (i === slotIndex) {
+        return {
+          ...updatedTargetSlot,
+          hand: updatedSourceSlot.hand,
+          drawPile: updatedSourceSlot.drawPile,
+          discardPile: updatedSourceSlot.discardPile,
+        };
+      }
+      return updatedTargetSlot;
+    });
+  }
+
   newState = {
     ...newState,
     log,
-    player: { ...newState.player, active: updatedPlayerActive },
+    player: { ...newState.player, active: finalPlayerActive },
     enemy: updatedEnemy,
   };
 
@@ -721,7 +787,7 @@ export function checkFaints(state) {
       if (!slot || slot.creature.currentHp > 0) continue;
 
       log.push(`${slot.creature.name} has fainted!`);
-      sideState.fainted = [...sideState.fainted, slot.creature];
+      sideState.fainted = [...(sideState.fainted ?? []), slot.creature];
 
       // Bring in next bench creature
       if (sideState.bench.length > 0) {
@@ -804,6 +870,12 @@ export function startTurn(state, side) {
   // Each active creature on this side draws a card and processes status effects
   const sideState = newState[side];
   const newActive = sideState.active.map(slot => {
+    // Expire shield at the START of this creature's turn (it protected them last turn)
+    if (slot && side === 'enemy') {
+      slot = { ...slot, creature: { ...slot.creature,
+        statusEffects: slot.creature.statusEffects.filter(e => e.type !== 'shield')
+      }};
+    }
     // Draw 1 card
     // Discard entire hand to discard pile before drawing
     const handDiscarded = {
@@ -851,94 +923,117 @@ export function runEnemyTurn(state) {
 
   const log = [...newState.log];
 
-  // Give enemy its own energy pool (same size, independent)
-  let enemyEnergy = BASE_ENERGY_PER_TURN;
-
-  // Iterate over each active enemy slot
+  // Each active enemy slot plays independently with its own 3-energy pool
   for (let slotIdx = 0; slotIdx < newState.enemy.active.length; slotIdx++) {
-    const slot = newState.enemy.active[slotIdx];
-    if (!slot) continue;
+    let enemyEnergy = BASE_ENERGY_PER_TURN;
+    if (!newState.enemy.active[slotIdx]) continue;
 
-    // Keep playing cards while there's energy and cards to play
-    let keepPlaying = true;
     let safetyCounter = 0;
-    while (keepPlaying && safetyCounter < 20) {
+    while (safetyCounter < 20) {
       safetyCounter++;
-      // Re-read slot from newState so hand is updated after each card play
+
       const slot = newState.enemy.active[slotIdx];
-      if (!slot) { keepPlaying = false; break; }
-      const playableCards = slot.hand
+      if (!slot || slot.stunned) break;
+
+      // Build list of affordable cards, shuffled so all types get equal play
+      const affordable = slot.hand
         .map(id => CARD_DEFS[id])
-        .filter(c => c && c.energyCost <= enemyEnergy)
+        .filter(c => c && c.energyCost <= enemyEnergy);
+
+      if (affordable.length === 0) break;
+
+      // Priority: attacks first (to deal damage), then other types in random order
+      // Within attacks, prefer highest damage. Within others, pick randomly.
+      const attacks = affordable
+        .filter(c => c.tags.includes('attack'))
         .sort((a, b) => (b.baseDamage ?? 0) - (a.baseDamage ?? 0));
+      const nonAttacks = affordable
+        .filter(c => !c.tags.includes('attack'))
+        .sort(() => Math.random() - 0.5);
 
-      if (playableCards.length === 0) {
-        keepPlaying = false;
-        break;
-      }
+      // Play attacks first, then non-attacks — but interleave if no attacks left
+      const card = attacks.length > 0 ? attacks[0] : nonAttacks[0];
+      if (!card) break;
 
-      const card = playableCards[0];
+      const attacker = slot.creature;
 
-      // Pick target: player active with lowest HP
+      // Pick target: player active creature with lowest HP
       const targetIdx = newState.player.active
         .map((s, i) => ({ hp: s?.creature.currentHp ?? Infinity, i }))
         .sort((a, b) => a.hp - b.hp)[0]?.i ?? 0;
-
-      // Resolve attack (reuse same hit logic but driven manually here)
-      const attacker = slot.creature;
       const defenderSlot = newState.player.active[targetIdx];
       if (!defenderSlot) break;
 
       const defender = defenderSlot.creature;
-      // Apply Fortify AC bonus — each Fortify stack adds +1 AC
-      const fortify = defender.statusEffects.find(e => e.type === 'fortify');
-      const effectiveAC = defender.armorClass + (fortify?.stacks ?? 0);
-      const rollStat = attacker.stats[card.scalingStat] ?? attacker.stats.strength;
-      const hitResult = resolveHitRoll(rollStat, effectiveAC);
-
-      log.push(
-        `${attacker.name} plays ${card.name} — rolls ${hitResult.roll} + ${hitResult.modifier} = ${hitResult.total} vs AC ${effectiveAC}${fortify ? ` (${defender.armorClass}+${fortify.stacks} Fortify)` : ''}.`
-      );
-
       let updatedDefenderSlot = { ...defenderSlot };
+      let updatedSelfSlot = { ...slot };
 
-      if (hitResult.hit && card.tags.includes('attack')) {
-        const rawDamage = (card.baseDamage ?? 0) + statModifier(rollStat);
-        const { damage, effectiveness } = calculateDamage(rawDamage, attacker.type, defender.type);
-
+      // ── Resolve card effect by type ──
+      if (card.tags.includes('attack')) {
+        const fortify   = defender.statusEffects.find(e => e.type === 'fortify');
+        const shredFx   = defender.statusEffects.find(e => e.type === 'shred');
+        const evasionFx = defender.statusEffects.find(e => e.type === 'evasion');
+        const effectiveAC = defender.armorClass
+          + (fortify?.stacks ?? 0)
+          - ((shredFx?.stacks ?? 0) * 2)
+          + (evasionFx?.stacks ?? 0) * 4;
+        const rollStat = attacker.stats[card.scalingStat] ?? attacker.stats.strength;
+        const hitResult = resolveHitRoll(rollStat, effectiveAC);
         log.push(
-          `Hit! ${effectiveness !== 'normal' ? `(${effectiveness}) ` : ''}${damage} damage to ${defender.name}.`
+          `${attacker.name} plays ${card.name} — rolls ${hitResult.roll}+${hitResult.modifier}=${hitResult.total} vs AC${effectiveAC}.`
         );
-
-        updatedDefenderSlot = applyDamageToSlot(updatedDefenderSlot, damage);
-
-        if (card.onHitStatus) {
-          updatedDefenderSlot = addStatus(updatedDefenderSlot, card.onHitStatus.type, card.onHitStatus.stacks);
-          log.push(`${defender.name} gains ${card.onHitStatus.stacks} stack(s) of ${card.onHitStatus.type}.`);
+        if (hitResult.hit) {
+          const rawDamage = (card.baseDamage ?? 0) + statModifier(rollStat);
+          const { damage, effectiveness } = calculateDamage(rawDamage, attacker.type, defender.type, defender.statusEffects);
+          log.push(`Hit! ${effectiveness !== 'normal' ? `(${effectiveness}) ` : ''}${damage} damage to ${defender.name}.`);
+          updatedDefenderSlot = applyDamageToSlot(updatedDefenderSlot, damage);
+          if (card.onHitStatus) {
+            updatedDefenderSlot = addStatus(updatedDefenderSlot, card.onHitStatus.type, card.onHitStatus.stacks);
+            log.push(`${defender.name} gains ${card.onHitStatus.stacks} ${card.onHitStatus.type}!`);
+          }
+        } else {
+          log.push(`Miss! ${attacker.name}'s ${card.name} fails to connect.`);
         }
-      } else if (!hitResult.hit) {
-        log.push(`Miss! ${attacker.name}'s ${card.name} fails to connect.`);
+      } else if (card.tags.includes('status') && card.onHitStatus) {
+        updatedDefenderSlot = addStatus(updatedDefenderSlot, card.onHitStatus.type, card.onHitStatus.stacks);
+        log.push(`${attacker.name} inflicts ${card.onHitStatus.stacks} ${card.onHitStatus.type} on ${defender.name}!`);
+      } else if (card.tags.includes('defend')) {
+        const shieldAmt = (card.shieldAmount ?? 0) + statModifier(attacker.stats[card.scalingStat ?? 'constitution']);
+        updatedSelfSlot = addStatus(updatedSelfSlot, 'shield', shieldAmt);
+        log.push(`${attacker.name} gains ${shieldAmt} Shield.`);
+      } else if (card.tags.includes('heal')) {
+        const healAmt = (card.healAmount ?? 0) + statModifier(attacker.stats[card.scalingStat ?? 'wisdom']);
+        const newHp = Math.min(attacker.maxHp, attacker.currentHp + healAmt);
+        const healed = newHp - attacker.currentHp;
+        updatedSelfSlot = { ...updatedSelfSlot, creature: { ...updatedSelfSlot.creature, currentHp: newHp } };
+        log.push(`${attacker.name} heals ${healed} HP.`);
+      } else if (card.tags.includes('utility') && card.drawAmount) {
+        updatedSelfSlot = drawCards(updatedSelfSlot, card.drawAmount);
+        log.push(`${attacker.name} draws ${card.drawAmount} card(s).`);
+      } else if (card.energyGain) {
+        log.push(`${attacker.name} uses ${card.name}.`);
+        enemyEnergy = Math.min(9, enemyEnergy + card.energyGain);
+      } else {
+        log.push(`${attacker.name} uses ${card.name}.`);
       }
 
-      // Update enemy slot hand/discard
-      const handIdx = newState.enemy.active[slotIdx].hand.indexOf(card.id);
+      // Remove played card from hand, add to discard
+      const handIdx = updatedSelfSlot.hand.indexOf(card.id);
       const updatedEnemySlot = {
-        ...newState.enemy.active[slotIdx],
-        hand: newState.enemy.active[slotIdx].hand.filter((_, i) => i !== handIdx),
-        discardPile: [...newState.enemy.active[slotIdx].discardPile, card.id],
+        ...updatedSelfSlot,
+        hand: updatedSelfSlot.hand.filter((_, i) => i !== handIdx),
+        discardPile: [...updatedSelfSlot.discardPile, card.id],
       };
 
       const updatedEnemyActive = [...newState.enemy.active];
       updatedEnemyActive[slotIdx] = updatedEnemySlot;
-
       const updatedPlayerActive = [...newState.player.active];
       updatedPlayerActive[targetIdx] = updatedDefenderSlot;
 
       enemyEnergy -= card.energyCost;
 
       newState = {
-        ...newState,
-        log,
+        ...newState, log,
         enemy:  { ...newState.enemy,  active: updatedEnemyActive },
         player: { ...newState.player, active: updatedPlayerActive },
       };
@@ -947,12 +1042,6 @@ export function runEnemyTurn(state) {
       if (newState.phase === 'victory' || newState.phase === 'defeat') return newState;
     }
 
-    // Expire enemy shields at end of their turn
-    const finalActive = [...newState.enemy.active];
-    if (finalActive[slotIdx]) {
-      finalActive[slotIdx] = expireShield(finalActive[slotIdx]);
-    }
-    newState = { ...newState, enemy: { ...newState.enemy, active: finalActive } };
   }
 
   // Hand back to player, increment turn counter, start player's turn
@@ -965,6 +1054,196 @@ export function runEnemyTurn(state) {
 
   newState = startTurn(newState, 'player');
   return newState;
+}
+
+
+/**
+ * Runs the enemy turn step-by-step, returning an array of intermediate states.
+ * Each step = one enemy card action with its own post-action game state.
+ * CombatUI uses this so HP/status panels update live per action.
+ */
+export function runEnemyTurnSteps(state) {
+  if (state.phase !== 'enemy') return { steps: [], finalState: state };
+
+  const preStartLogLen = state.log.length;
+  let newState = startTurn(state, 'enemy');
+  if (newState.phase === 'victory' || newState.phase === 'defeat') {
+    return { steps: [], finalState: newState };
+  }
+
+  const steps = [];
+  // If startTurn generated status tick messages (ignite damage etc), 
+  // add them as the first step so they appear in the battle log
+  const startTurnMessages = newState.log.slice(preStartLogLen);
+  const tickMessages = startTurnMessages.filter(m =>
+    m.includes('ignite') || m.includes('burn') || m.includes('poison') ||
+    m.includes('regen') || m.includes('stun') || m.includes('damage') ||
+    m.includes('fainted')
+  );
+  if (tickMessages.length > 0) {
+    steps.push({ messages: tickMessages, state: newState });
+  }
+  let prevLogLen = newState.log.length;
+
+  for (let slotIdx = 0; slotIdx < newState.enemy.active.length; slotIdx++) {
+    let enemyEnergy = BASE_ENERGY_PER_TURN;
+    if (!newState.enemy.active[slotIdx]) continue;
+
+    let safetyCounter = 0;
+    while (safetyCounter < 20) {
+      safetyCounter++;
+
+      const slot = newState.enemy.active[slotIdx];
+      if (!slot || slot.stunned) break;
+
+      const affordable = slot.hand
+        .map(id => CARD_DEFS[id])
+        .filter(c => c && c.energyCost <= enemyEnergy);
+      if (affordable.length === 0) break;
+
+      const attacks = affordable
+        .filter(c => c.tags.includes('attack'))
+        .sort((a, b) => (b.baseDamage ?? 0) - (a.baseDamage ?? 0));
+      const nonAttacks = affordable
+        .filter(c => !c.tags.includes('attack'))
+        .sort(() => Math.random() - 0.5);
+
+      const card = attacks.length > 0 ? attacks[0] : nonAttacks[0];
+      if (!card) break;
+
+      const attacker = slot.creature;
+      const targetIdx = newState.player.active
+        .map((s, i) => ({ hp: s?.creature.currentHp ?? Infinity, i }))
+        .sort((a, b) => a.hp - b.hp)[0]?.i ?? 0;
+      const defenderSlot = newState.player.active[targetIdx];
+      if (!defenderSlot) break;
+
+      const defender = defenderSlot.creature;
+      let updatedDefenderSlot = { ...defenderSlot };
+      let updatedSelfSlot = { ...slot };
+      const log = [...newState.log];
+
+      if (card.tags.includes('attack')) {
+        const fortify   = defender.statusEffects.find(e => e.type === 'fortify');
+        const shredFx   = defender.statusEffects.find(e => e.type === 'shred');
+        const evasionFx = defender.statusEffects.find(e => e.type === 'evasion');
+        const effectiveAC = defender.armorClass
+          + (fortify?.stacks ?? 0)
+          - ((shredFx?.stacks ?? 0) * 2)
+          + (evasionFx?.stacks ?? 0) * 4;
+        const rollStat = attacker.stats[card.scalingStat] ?? attacker.stats.strength;
+        const hitResult = resolveHitRoll(rollStat, effectiveAC);
+        log.push(`${attacker.name} plays ${card.name} — rolls ${hitResult.roll}+${hitResult.modifier}=${hitResult.total} vs AC${effectiveAC}.`);
+        if (hitResult.hit) {
+          const rawDamage = (card.baseDamage ?? 0) + statModifier(rollStat);
+          const { damage, effectiveness } = calculateDamage(rawDamage, attacker.type, defender.type, defender.statusEffects);
+          log.push(`Hit! ${effectiveness !== 'normal' ? `(${effectiveness}) ` : ''}${damage} damage to ${defender.name}.`);
+          updatedDefenderSlot = applyDamageToSlot(updatedDefenderSlot, damage);
+          if (card.onHitStatus) {
+            updatedDefenderSlot = addStatus(updatedDefenderSlot, card.onHitStatus.type, card.onHitStatus.stacks);
+            log.push(`${defender.name} gains ${card.onHitStatus.stacks} ${card.onHitStatus.type}!`);
+          }
+        } else {
+          log.push(`Miss! ${attacker.name}'s ${card.name} fails to connect.`);
+        }
+        // onPlayStatus applies to self regardless of hit/miss (e.g. thorns, fortify)
+        if (card.onPlayStatus) {
+          updatedSelfSlot = addStatus(updatedSelfSlot, card.onPlayStatus.type, card.onPlayStatus.stacks);
+          log.push(`${attacker.name} gains ${card.onPlayStatus.stacks} ${card.onPlayStatus.type}!`);
+        }
+        if (card.onPlayStatus2) {
+          updatedSelfSlot = addStatus(updatedSelfSlot, card.onPlayStatus2.type, card.onPlayStatus2.stacks);
+          log.push(`${attacker.name} gains ${card.onPlayStatus2.stacks} ${card.onPlayStatus2.type}!`);
+        }
+      } else if (card.tags.includes('status') && card.onHitStatus) {
+        updatedDefenderSlot = addStatus(updatedDefenderSlot, card.onHitStatus.type, card.onHitStatus.stacks);
+        log.push(`${attacker.name} inflicts ${card.onHitStatus.stacks} ${card.onHitStatus.type} on ${defender.name}!`);
+      } else if (card.tags.includes('defend')) {
+        // Shield
+        if (card.shieldAmount) {
+          const shieldAmt = card.shieldAmount + statModifier(attacker.stats[card.scalingStat ?? 'constitution']);
+          updatedSelfSlot = addStatus(updatedSelfSlot, 'shield', shieldAmt);
+          log.push(`${attacker.name} gains ${shieldAmt} Shield.`);
+        }
+        // onPlayStatus (fortify, evasion, thorns, radiance, flow, etc.)
+        if (card.onPlayStatus) {
+          updatedSelfSlot = addStatus(updatedSelfSlot, card.onPlayStatus.type, card.onPlayStatus.stacks);
+          log.push(`${attacker.name} gains ${card.onPlayStatus.stacks} ${card.onPlayStatus.type}!`);
+        }
+        if (card.onPlayStatus2) {
+          updatedSelfSlot = addStatus(updatedSelfSlot, card.onPlayStatus2.type, card.onPlayStatus2.stacks);
+          log.push(`${attacker.name} gains ${card.onPlayStatus2.stacks} ${card.onPlayStatus2.type}!`);
+        }
+        if (!card.shieldAmount && !card.onPlayStatus) {
+          log.push(`${attacker.name} uses ${card.name}.`);
+        }
+      } else if (card.tags.includes('heal')) {
+        const healAmt = (card.healAmount ?? 0) + statModifier(attacker.stats[card.scalingStat ?? 'wisdom']);
+        const newHp = Math.min(attacker.maxHp, attacker.currentHp + healAmt);
+        const healed = newHp - attacker.currentHp;
+        if (healed > 0) {
+          updatedSelfSlot = { ...updatedSelfSlot, creature: { ...updatedSelfSlot.creature, currentHp: newHp } };
+          log.push(`${attacker.name} heals ${healed} HP.`);
+        }
+        if (card.onPlayStatus) {
+          updatedSelfSlot = addStatus(updatedSelfSlot, card.onPlayStatus.type, card.onPlayStatus.stacks);
+          log.push(`${attacker.name} gains ${card.onPlayStatus.stacks} ${card.onPlayStatus.type}!`);
+        }
+      } else if (card.tags.includes('utility')) {
+        if (card.drawAmount) {
+          updatedSelfSlot = drawCards(updatedSelfSlot, card.drawAmount);
+          log.push(`${attacker.name} draws ${card.drawAmount} card(s).`);
+        }
+        if (card.energyGain) {
+          enemyEnergy = Math.min(9, enemyEnergy + card.energyGain);
+          log.push(`${attacker.name} restores ${card.energyGain} energy!`);
+        }
+        if (card.onPlayStatus) {
+          updatedSelfSlot = addStatus(updatedSelfSlot, card.onPlayStatus.type, card.onPlayStatus.stacks);
+          log.push(`${attacker.name} gains ${card.onPlayStatus.stacks} ${card.onPlayStatus.type}!`);
+        }
+        if (!card.drawAmount && !card.energyGain && !card.onPlayStatus) {
+          log.push(`${attacker.name} uses ${card.name}.`);
+        }
+      } else {
+        log.push(`${attacker.name} uses ${card.name}.`);
+      }
+
+      const handIdx = updatedSelfSlot.hand.indexOf(card.id);
+      const updatedEnemySlot = {
+        ...updatedSelfSlot,
+        hand: updatedSelfSlot.hand.filter((_, i) => i !== handIdx),
+        discardPile: [...updatedSelfSlot.discardPile, card.id],
+      };
+
+      const updatedEnemyActive = [...newState.enemy.active];
+      updatedEnemyActive[slotIdx] = updatedEnemySlot;
+      const updatedPlayerActive = [...newState.player.active];
+      updatedPlayerActive[targetIdx] = updatedDefenderSlot;
+
+      enemyEnergy -= card.energyCost;
+
+      newState = {
+        ...newState, log,
+        enemy:  { ...newState.enemy,  active: updatedEnemyActive },
+        player: { ...newState.player, active: updatedPlayerActive },
+      };
+
+      newState = checkFaints(newState);
+
+      // Capture this step: messages since last step + the state RIGHT NOW
+      const stepMessages = newState.log.slice(prevLogLen);
+      prevLogLen = newState.log.length;
+      steps.push({ messages: stepMessages, state: newState });
+
+      if (newState.phase === 'victory' || newState.phase === 'defeat') {
+        return { steps, finalState: newState };
+      }
+    }
+
+  }
+
+  return { steps, finalState: newState };
 }
 
 
