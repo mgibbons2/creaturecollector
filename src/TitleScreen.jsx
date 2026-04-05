@@ -139,7 +139,7 @@ function PokeButton({ onClick, children }) {
         boxShadow:"0 5px 0 #504838, 0 0 30px rgba(232,216,160,0.15)",
         transition:"all 0.08s",
       }}
-      onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
+      onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
       onMouseUp={e   => e.currentTarget.style.transform="translateY(0)"}
       onMouseLeave={e=> e.currentTarget.style.transform="translateY(0)"}
     >

@@ -190,9 +190,9 @@ function ShopCard({ card, creature, onBuy, bought, canAfford }) {
             letterSpacing:"0.08em",
             boxShadow:"0 2px 0 #604000",
           }}
-          onMouseDown={e => e.currentTarget.style.transform="translateY(2px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(2px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(2px)"}
-          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(2px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(2px)"}
+          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
         >
           BUY
         </button>
@@ -250,9 +250,9 @@ function RelicCard({ relic, onBuy, bought, canAfford, owned }) {
             letterSpacing:"0.08em",
             boxShadow:"0 2px 0 #604000",
           }}
-          onMouseDown={e => e.currentTarget.style.transform="translateY(2px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(2px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(2px)"}
-          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(2px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(2px)"}
+          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
         >
           BUY RELIC
         </button>
@@ -531,7 +531,7 @@ export default function ShopScreen() {
                 }}
                 onMouseDown={e => gold >= HEAL_COST && (e.currentTarget.style.transform="translateY(3px)")}
                 onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-                onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+                onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
               >
                 {gold >= HEAL_COST ? "HEAL PARTY ♥" : "NOT ENOUGH GOLD"}
               </button>
@@ -560,9 +560,9 @@ export default function ShopScreen() {
             letterSpacing:"0.1em", boxShadow:"0 3px 0 #504838",
             transition:"all 0.08s",
           }}
-          onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"}
-          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"}
+          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
+          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
         >
           LEAVE SHOP ▶
         </button>
