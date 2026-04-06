@@ -16,32 +16,11 @@
 import { useState, useEffect } from "react";
 import { useRun, RunActions } from "./RunContext.jsx";
 import { CREATURE_DEFS, getStageName } from "./creatureDefs.js";
+import { TYPE_COLORS, TYPE_SHAPES, statMod } from "./shared.js";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 
-const TYPE_COLORS = {
-  fire:      { light:"#FF9741", mid:"#DD6610", dark:"#7A2410" },
-  water:     { light:"#74BCFF", mid:"#2B7FE8", dark:"#0E3577" },
-  earth:     { light:"#A8D070", mid:"#4A8C2A", dark:"#1A4A08" },
-  wind:      { light:"#AAC8FF", mid:"#6070C8", dark:"#283080" },
-  shadow:    { light:"#C880FF", mid:"#7038A8", dark:"#2A1050" },
-  light:     { light:"#FFD060", mid:"#C89010", dark:"#604000" },
-  colorless: { light:"#C8C8C8", mid:"#888888", dark:"#333333" },
-};
-
-const TYPE_SHAPES = {
-  fire:      "M60,20 C60,20 70,40 55,55 C70,45 80,60 65,75 C75,65 85,75 75,90 C90,75 95,55 80,40 C90,50 85,30 75,25 C80,15 70,5 60,20Z M45,60 C45,60 50,70 42,80 C50,72 55,78 50,88 C58,78 60,65 52,55Z",
-  water:     "M50,15 C50,15 65,35 65,55 A15,15 0 0,1 35,55 C35,35 50,15 50,15Z M30,50 C30,50 40,65 40,78 A10,10 0 0,1 20,78 C20,65 30,50 30,50Z M70,50 C70,50 80,65 80,78 A10,10 0 0,1 60,78 C60,65 70,50 70,50Z",
-  earth:     "M20,80 L50,20 L80,80Z M35,75 L50,45 L65,75Z M15,90 L35,90 L25,70Z M65,90 L85,90 L75,70Z",
-  wind:      "M15,50 C25,35 45,30 55,50 C45,42 50,55 40,65 C55,55 65,65 55,80 C70,65 75,45 60,35 C75,40 85,25 70,20 C80,12 70,5 60,15 C55,8 45,5 40,15 C25,10 15,25 15,50Z",
-  shadow:    "M50,10 L58,35 L85,35 L63,52 L72,78 L50,62 L28,78 L37,52 L15,35 L42,35Z",
-  light:     "M50,15 L55,38 L78,30 L62,48 L78,65 L55,58 L50,80 L45,58 L22,65 L38,48 L22,30 L45,38Z M50,28 L53,40 L65,36 L56,45 L62,56 L51,52 L50,63 L49,52 L38,56 L44,45 L35,36 L47,40Z",
-  colorless: "M25,25 L75,25 L75,75 L25,75Z",
-};
-
 const STAGE_LABELS = { baby:"Baby", adult:"Adult", elder:"Elder" };
-
-function statMod(v) { return Math.floor((v - 10) / 2); }
 
 // ─── ANIMATION PHASES ────────────────────────────────────────
 
@@ -404,9 +383,9 @@ export default function EvolutionScreen({ creature, onDone }) {
             position:"relative", zIndex:10,
             animation:"fadeInUp 0.4s ease-out",
           }}
-          onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
-          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"}
+          onMouseUp={e   => e.currentTarget.style.transform="none"}
+          onMouseLeave={e=> e.currentTarget.style.transform="none"}
         >
           CONTINUE ▶
         </button>

@@ -2,12 +2,11 @@
 //  TitleScreen.jsx
 // ============================================================
 
+import { useState } from "react";
 import { useRun, RunActions } from "./RunContext.jsx";
-
-const TYPE_COLORS = {
-  fire:"#DD6610", water:"#2B7FE8", earth:"#4A8C2A",
-  wind:"#6070C8", shadow:"#7038A8", light:"#C89010",
-};
+import { useIsMobile } from "./useMediaQuery.js";
+import GuideBook from "./GuideBook.jsx";
+import { TYPE_COLORS } from "./shared.js";
 
 // Animated drifting type-colour orbs in the background
 function BackgroundOrbs() {
@@ -27,7 +26,7 @@ function BackgroundOrbs() {
           left:`${o.x}%`, top:`${o.y}%`,
           width: o.size, height: o.size,
           borderRadius:"50%",
-          background: TYPE_COLORS[o.type],
+          background: TYPE_COLORS[o.type]?.mid || "#888",
           opacity: 0.08,
           filter:"blur(40px)",
           animation:`orbDrift ${6 + i}s ease-in-out ${o.delay}s infinite alternate`,
@@ -40,6 +39,8 @@ function BackgroundOrbs() {
 
 export default function TitleScreen() {
   const { dispatch } = useRun();
+  const [showGuide, setShowGuide] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div style={{
@@ -54,7 +55,7 @@ export default function TitleScreen() {
     }}>
       <BackgroundOrbs />
 
-      <div style={{ position:"relative", zIndex:1, textAlign:"center", padding:"0 20px", width:"100%", maxWidth:640, margin:"0 auto" }}>
+      <div style={{ position:"relative", zIndex:1, textAlign:"center", width:"100%", maxWidth:640, margin:"0 auto", padding: isMobile ? "0 16px" : "0 20px" }}>
 
         {/* Logo */}
         <div style={{
@@ -89,13 +90,13 @@ export default function TitleScreen() {
           display:"flex", gap:8, justifyContent:"center",
           flexWrap:"wrap", marginBottom:48,
         }}>
-          {Object.entries(TYPE_COLORS).map(([type, color]) => (
+          {Object.entries(TYPE_COLORS).map(([type, col]) => (
             <span key={type} style={{
               fontSize:9, fontWeight:900, padding:"3px 10px",
               borderRadius:3, letterSpacing:"0.12em",
-              background: color + "22",
-              border: `1px solid ${color}44`,
-              color,
+              background: col.mid + "22",
+              border: `1px solid ${col.mid}44`,
+              color: col.mid,
               textTransform:"uppercase",
             }}>
               {type}
@@ -108,10 +109,18 @@ export default function TitleScreen() {
           NEW GAME ▶
         </PokeButton>
 
+        <div style={{ marginTop:14 }}>
+          <PokeButton onClick={() => setShowGuide(true)} secondary>
+            📖 HOW TO PLAY
+          </PokeButton>
+        </div>
+
         <div style={{ marginTop:16, fontSize:9, color:"#403828", letterSpacing:"0.1em" }}>
           PRESS TO BEGIN YOUR JOURNEY
         </div>
       </div>
+
+      {showGuide && <GuideBook onClose={() => setShowGuide(false)} />}
 
       <style>{`
         @keyframes orbDrift {
@@ -123,25 +132,29 @@ export default function TitleScreen() {
   );
 }
 
-function PokeButton({ onClick, children }) {
+function PokeButton({ onClick, children, secondary = false }) {
   return (
     <button
       onClick={onClick}
       style={{
         fontFamily:"'Courier New', monospace",
-        fontSize:16, fontWeight:900,
-        background:"#E8E8D0", color:"#302810",
-        border:"4px solid #807860",
+        fontSize: secondary ? 13 : 16, fontWeight:900,
+        background: secondary ? "transparent" : "#E8E8D0",
+        color: secondary ? "#807860" : "#302810",
+        border: secondary ? "2px solid #3a3828" : "4px solid #807860",
         borderRadius:6,
-        padding:"12px 40px",
+        padding: secondary ? "9px 28px" : "12px 40px",
         cursor:"pointer",
         letterSpacing:"0.12em",
-        boxShadow:"0 5px 0 #504838, 0 0 30px rgba(232,216,160,0.15)",
+        boxShadow: secondary
+          ? "0 3px 0 #252018"
+          : "0 5px 0 #504838, 0 0 30px rgba(232,216,160,0.15)",
         transition:"all 0.08s",
       }}
-      onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
+      onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"}
       onMouseUp={e   => e.currentTarget.style.transform="translateY(0)"}
       onMouseLeave={e=> e.currentTarget.style.transform="translateY(0)"}
+      onMouseEnter={e=> { if(secondary) e.currentTarget.style.borderColor="#807860"; }}
     >
       {children}
     </button>

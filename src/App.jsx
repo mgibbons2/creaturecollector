@@ -61,9 +61,9 @@ function StubButton({ onClick, children }) {
         letterSpacing:"0.1em", boxShadow:"0 4px 0 #504838",
         transition:"all 0.08s",
       }}
-      onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(4px)"}
-      onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-      onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+      onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"}
+      onMouseUp={e   => e.currentTarget.style.transform="none"}
+      onMouseLeave={e=> e.currentTarget.style.transform="none"}
     >
       {children}
     </button>

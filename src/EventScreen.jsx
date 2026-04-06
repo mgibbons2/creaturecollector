@@ -10,14 +10,11 @@
 // ============================================================
 
 import { useState } from "react";
+import { useIsMobile } from "./useMediaQuery.js";
 import { useRun, RunActions } from "./RunContext.jsx";
+import { TYPE_COLORS } from "./shared.js";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
-
-const TYPE_COLORS = {
-  fire:"#DD6610", water:"#2B7FE8", earth:"#4A8C2A",
-  wind:"#6070C8", shadow:"#7038A8", light:"#C89010",
-};
 
 // ─── OUTCOME SUMMARY CHIP ────────────────────────────────────
 
@@ -123,6 +120,7 @@ function ChoiceButton({ choice, isDisabled, disabledReason, onClick }) {
 // ─── MAIN SCREEN ─────────────────────────────────────────────
 
 export default function EventScreen() {
+  const isMobile = useIsMobile();
   const { run, dispatch } = useRun();
   const { pendingEvent, gold, party } = run;
 
@@ -172,10 +170,10 @@ export default function EventScreen() {
 
       {/* Event card */}
       <div style={{
-        width:"100%", maxWidth:560,
+        width:"100%", maxWidth:560, padding: isMobile ? "12px 10px" : "28px 28px 24px",
         background:"#1a1a10",
         border:"3px solid #302818",
-        borderRadius:12, padding:"28px 28px 24px",
+        borderRadius:12,
         boxShadow:"0 4px 0 #0a0a08",
       }}>
 
@@ -277,9 +275,9 @@ export default function EventScreen() {
                 display:"block",
                 transition:"all 0.08s",
               }}
-              onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(4px)"}
-              onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-              onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+              onMouseDown={e => e.currentTarget.style.transform="translateY(4px)"}
+              onMouseUp={e   => e.currentTarget.style.transform="none"}
+              onMouseLeave={e=> e.currentTarget.style.transform="none"}
             >
               CONTINUE ▶
             </button>
@@ -295,7 +293,7 @@ export default function EventScreen() {
         {party.map((c, i) => {
           const pct    = Math.min(100, Math.round((c.currentHp / c.maxHp) * 100));
           const hpCol  = pct > 50 ? "#40C850" : pct > 20 ? "#F8D030" : "#F85840";
-          const typeCol = TYPE_COLORS[c.type] || "#888";
+          const typeCol = TYPE_COLORS[c.type]?.mid || "#888";
           return (
             <div key={i} style={{
               flex:1, minWidth:100,

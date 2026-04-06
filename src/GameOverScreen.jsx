@@ -5,11 +5,7 @@
 // ============================================================
 
 import { useRun, RunActions } from "./RunContext.jsx";
-
-const TYPE_COLORS = {
-  fire:"#DD6610", water:"#2B7FE8", earth:"#4A8C2A",
-  wind:"#6070C8", shadow:"#7038A8", light:"#C89010",
-};
+import { TYPE_COLORS } from "./shared.js";
 
 function StatLine({ label, value }) {
   return (
@@ -83,7 +79,7 @@ export function GameOverScreen() {
           justifyContent:"center", marginBottom:24,
         }}>
           {party.map((c, i) => {
-            const typeCol = TYPE_COLORS[c.type] || "#888";
+            const typeCol = TYPE_COLORS[c.type]?.mid || "#888";
             return (
               <div key={i} style={{
                 background:"#141410",
@@ -112,9 +108,9 @@ export function GameOverScreen() {
           boxShadow:"0 5px 0 #504838",
           transition:"all 0.08s",
         }}
-        onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
-        onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-        onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+        onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"}
+        onMouseUp={e   => e.currentTarget.style.transform="none"}
+        onMouseLeave={e=> e.currentTarget.style.transform="none"}
       >
         ← RETURN TO TITLE
       </button>

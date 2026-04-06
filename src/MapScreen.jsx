@@ -4,11 +4,13 @@
 //  then Enter Node to start the encounter.
 // ============================================================
 
+import { useIsMobile } from "./useMediaQuery.js";
 import { useState, useEffect } from "react";
 import PartyScreen from "./PartyScreen.jsx";
 import EvolutionScreen from "./EvolutionScreen.jsx";
 import { useRun, RunActions } from "./RunContext.jsx";
 import { getReachableNodes, canMoveToNode, getCurrentNode, NodeType } from "./mapGenerator.js";
+import { TYPE_COLORS } from "./shared.js";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 
@@ -20,11 +22,6 @@ const NODE_META = {
   [NodeType.SHOP]:   { icon:"$", label:"Shop",   bg:"#0a1e10", border:"#208840", color:"#40C060" },
   [NodeType.REST]:   { icon:"♥", label:"Rest",   bg:"#0e0e1e", border:"#204888", color:"#4080E0" },
   [NodeType.EVENT]:  { icon:"?", label:"Event",  bg:"#1a1410", border:"#806030", color:"#C09040" },
-};
-
-const TYPE_COLORS = {
-  fire:"#DD6610", water:"#2B7FE8", earth:"#4A8C2A",
-  wind:"#6070C8", shadow:"#7038A8", light:"#C89010",
 };
 
 // ─── NODE DOT ────────────────────────────────────────────────
@@ -123,7 +120,7 @@ function PartyBar({ party }) {
       {party.map((c, i) => {
         const pct = Math.round((c.currentHp / c.maxHp) * 100);
         const hpCol = pct > 50 ? "#40C850" : pct > 20 ? "#F8D030" : "#F85840";
-        const typeCol = TYPE_COLORS[c.type] || "#888";
+        const typeCol = TYPE_COLORS[c.type]?.mid || "#888";
         return (
           <div key={i} style={{
             background:"#1a1a10", border:`2px solid ${typeCol}44`,
@@ -136,7 +133,7 @@ function PartyBar({ party }) {
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:5 }}>
               <span style={{ fontSize:8, fontWeight:900, color:"#38A018", minWidth:14 }}>HP</span>
-              <div style={{ flex:1, height:6, background:"#302818", borderRadius:3, overflow:"hidden" }}>
+              <div style={{ flex:1, height:6, background:"#302818", borderRadius:3, overflow:"auto" }}>
                 <div style={{ height:"100%", width:`${pct}%`, background:hpCol, borderRadius:3, transition:"width 0.3s" }} />
               </div>
               <span style={{ fontSize:8, color:"#605840" }}>{c.currentHp}/{c.maxHp}</span>
@@ -159,6 +156,7 @@ function PartyBar({ party }) {
 // ─── MAIN SCREEN ─────────────────────────────────────────────
 
 export default function MapScreen() {
+  const isMobile = useIsMobile();
   const { run, dispatch } = useRun();
   const { map, party, gold, relics } = run;
 
@@ -300,11 +298,12 @@ export default function MapScreen() {
         </div>
       </div>
 
-      <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
+      <div style={{ display:"flex", flex:1, overflow:"auto" }}>
 
         {/* ── Map canvas ── */}
         <div style={{
           flex:1, overflowY:"auto", overflowX:"auto",
+          WebkitOverflowScrolling:"touch",
           padding:"20px",
           display:"flex", justifyContent:"center",
         }}>
@@ -399,9 +398,9 @@ export default function MapScreen() {
                     cursor:"pointer", letterSpacing:"0.1em",
                     boxShadow:"0 3px 0 #504838",
                   }}
-                  onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(3px)"}
-                  onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-                  onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+                  onMouseDown={e => e.currentTarget.style.transform="translateY(3px)"}
+                  onMouseUp={e   => e.currentTarget.style.transform="none"}
+                  onMouseLeave={e=> e.currentTarget.style.transform="none"}
                 >
                   ENTER ▶
                 </button>

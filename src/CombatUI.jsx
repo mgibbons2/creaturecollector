@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useIsMobile } from "./useMediaQuery.js";
 import {
   applyRelicDamageBonus, applyRelicHitBonus,
   getRelicExtraDraws, getRelicOnHitStatuses, applyRelicDrainBonus,
 } from "./relicEngine.js";
 import { runEnemyTurn, runEnemyTurnSteps, startTurn, tickPlayerStatuses, BASE_ENERGY_PER_TURN, CARDS_PER_ROUND, playCard, checkFaints, TYPE_CHART } from "./combatEngine.js";
 import { CARD_DEFS as IMPORTED_CARD_DEFS } from "./cardDefs.js";
+import { effectiveDamage, effectiveHeal, effectiveShield, hpBarColor, hpPercent, liveDesc, shuffle, statMod } from "./shared.js";
 
 // ─── MOCK DATA ───────────────────────────────────────────────
 
@@ -206,35 +208,14 @@ const MOCK_STATE = {
   },
 };
 
-const MOCK_CARDS_PARTIAL = {
-  ember_strike: { id:"ember_strike", name:"Ember Strike", type:"fire", energyCost:1, rarity:"common", tags:["attack"], scalingStat:"strength", baseDamage:9, description:"Deal 9 damage." },
-  cinder_toss:  { id:"cinder_toss",  name:"Cinder Toss",  type:"fire", energyCost:1, rarity:"common", tags:["attack","status"], scalingStat:"strength", baseDamage:7, description:"Deal 7 dmg. Apply 1 Ignite." },
-  heat_up:      { id:"heat_up",      name:"Heat Up",      type:"fire", energyCost:1, rarity:"common", tags:["status"], scalingStat:"intelligence", baseDamage:0, description:"Apply 2 Ignite to target." },
-  flame_shield: { id:"flame_shield", name:"Flame Shield", type:"fire", energyCost:1, rarity:"common", tags:["defend"], scalingStat:"constitution", shieldAmount:6, description:"Gain 6 Shield. Thorns 2." },
-  stoke:        { id:"stoke",        name:"Stoke",        type:"fire", energyCost:0, rarity:"common", tags:["attack","utility"], scalingStat:"intelligence", drawAmount:1, description:"Draw 1. Ignite bonus 3 dmg." },
-  quick_burn:   { id:"quick_burn",   name:"Quick Burn",   type:"fire", energyCost:1, rarity:"common", tags:["attack","multi_hit"], scalingStat:"dexterity", baseDamage:3, description:"Deal 3 damage twice." },
-  smolder:      { id:"smolder",      name:"Smolder",      type:"fire", energyCost:1, rarity:"common", tags:["status","aoe"], scalingStat:"intelligence", baseDamage:0, description:"Apply 1 Ignite all enemies." },
-  ash_wall:     { id:"ash_wall",     name:"Ash Wall",     type:"fire", energyCost:2, rarity:"common", tags:["defend"], scalingStat:"constitution", shieldAmount:10, description:"Gain 10 Shield." },
-  focus:        { id:"focus",        name:"Focus",        type:"colorless", energyCost:1, rarity:"common", tags:["utility"], scalingStat:"intelligence", drawAmount:2, description:"Draw 2 cards." },
-  bedrock:      { id:"bedrock",      name:"Bedrock",      type:"earth", energyCost:1, rarity:"common", tags:["defend","keyword"], scalingStat:"constitution", description:"Gain 2 Fortify." },
-  rockwall:     { id:"rockwall",     name:"Rock Wall",    type:"earth", energyCost:1, rarity:"common", tags:["defend","keyword"], scalingStat:"constitution", shieldAmount:8, description:"Gain 8 Shield + 1 Fortify." },
-  stone_strike: { id:"stone_strike", name:"Stone Strike", type:"earth", energyCost:1, rarity:"common", tags:["attack"], scalingStat:"strength", baseDamage:9, description:"Deal 9 damage." },
-  earthen_skin: { id:"earthen_skin", name:"Earthen Skin", type:"earth", energyCost:2, rarity:"common", tags:["defend","keyword"], scalingStat:"constitution", shieldAmount:6, description:"Gain 3 Fortify + 6 Shield." },
-  mud_slick:    { id:"mud_slick",    name:"Mud Slick",    type:"earth", energyCost:1, rarity:"common", tags:["status","control"], scalingStat:"intelligence", baseDamage:0, description:"Apply Slow (1) to target." },
-};
-
 // Merge real card defs over the mock set so all 146 cards are available
-const MOCK_CARDS = { ...MOCK_CARDS_PARTIAL, ...IMPORTED_CARD_DEFS };
+const MOCK_CARDS = IMPORTED_CARD_DEFS;
 
 // ─── HELPERS ─────────────────────────────────────────────────
 
-function hpPercent(cur, max) { return Math.max(0, Math.min(100, (cur / max) * 100)); }
-function hpBarColor(pct) {
-  if (pct > 50) return "#40C850";
-  if (pct > 20) return "#F8D030";
-  return "#F85840";
-}
-
+/** Returns the effective shield value for a card given a creature's stats. */
+/** Returns the effective heal value for a card given a creature's stats. */
+/** Returns the effective base damage for a card given a creature's stats. */
 // ─── CREATURE SILHOUETTE ─────────────────────────────────────
 
 function CreatureSilhouette({ type, creatureId, size = 96, flip = false, fainted = false, pulse = false }) {
@@ -271,6 +252,7 @@ function CreatureSilhouette({ type, creatureId, size = 96, flip = false, fainted
 // ─── POKÉMON-STYLE HP BAR PANEL ──────────────────────────────
 
 function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
+  const isMobile = useIsMobile();
   const prevHp = useRef(creature.currentHp);
   const [hitFlash, setHitFlash] = useState(false);
   useEffect(() => {
@@ -292,7 +274,7 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
       border: `2.5px solid ${col.mid}`,
       borderRadius: 10,
       padding: "9px 13px 10px",
-      minWidth: 200,
+      minWidth: isMobile ? 140 : 200,
       boxSizing: "border-box",
       boxShadow: isEnemy
         ? `0 4px 18px ${col.mid}33, inset 0 1px 0 rgba(255,255,255,0.05)`
@@ -317,14 +299,34 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
           {creature.name}
         </span>
         <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-          {/* AC badge */}
-          <span style={{
-            fontSize: 9, fontWeight: 900,
-            background: isEnemy ? col.dark : col.mid,
-            color: "#fff",
-            borderRadius: 4, padding: "2px 6px",
-            letterSpacing: "0.06em",
-          }}>AC {creature.armorClass}</span>
+          {/* AC badge — reactive to fortify / evasion / shred */}
+          {(() => {
+            const fortify  = creature.statusEffects?.find(e => e.type === 'fortify');
+            const evasion  = creature.statusEffects?.find(e => e.type === 'evasion');
+            const shred    = creature.statusEffects?.find(e => e.type === 'shred');
+            const bonus    = (fortify?.stacks ?? 0) + (evasion?.stacks ?? 0) * 4;
+            const penalty  = (shred?.stacks ?? 0) * 2;
+            const effectiveAC = creature.armorClass + bonus - penalty;
+            const delta    = bonus - penalty;
+            const deltaColor = delta > 0 ? '#58E858' : delta < 0 ? '#FF5555' : null;
+            return (
+              <span style={{
+                fontSize: 9, fontWeight: 900,
+                background: isEnemy ? col.dark : col.mid,
+                color: '#fff',
+                borderRadius: 4, padding: '2px 6px',
+                letterSpacing: '0.06em',
+                outline: delta !== 0 ? `2px solid ${deltaColor}` : 'none',
+              }}>
+                AC {effectiveAC}
+                {delta !== 0 && (
+                  <span style={{ color: deltaColor, fontWeight: 900, marginLeft: 2 }}>
+                    {delta > 0 ? `+${delta}` : delta}
+                  </span>
+                )}
+              </span>
+            );
+          })()}
           {/* Level badge */}
           <span style={{
             fontSize: 10, fontWeight: 700,
@@ -484,6 +486,7 @@ function Tip({ label, children }) {
 // ─── BATTLEFIELD SLOT ────────────────────────────────────────
 
 function BattleSlot({ slot, isEnemy, isTargeted, isGlowing, onClick }) {
+  const isMobile = useIsMobile();
   const { creature } = slot;
   const fainted = creature.currentHp <= 0;
   const col = TYPE_COLORS[creature.type] || TYPE_COLORS.colorless;
@@ -531,7 +534,7 @@ function BattleSlot({ slot, isEnemy, isTargeted, isGlowing, onClick }) {
       <CreatureSilhouette
         type={creature.type}
         creatureId={(creature.name || "").toLowerCase().replace(/\s/g, "")}
-        size={isEnemy ? 86 : 98}
+        size={isEnemy ? (isMobile ? 60 : 86) : (isMobile ? 70 : 98)}
         flip={isEnemy}
         fainted={fainted}
       />
@@ -604,9 +607,11 @@ function FoeBenchList({ bench }) {
 // ─── PLAYER BENCH BAR (horizontal strip, bottom-right) ───────
 
 function PlayerBenchBar({ bench }) {
+  const isMobile = useIsMobile();
   return (
     <div style={{
-      display:"flex", flexDirection:"column", gap:4,
+      display:"flex", flexDirection: isMobile ? "row" : "column", gap:4,
+      flexWrap: isMobile ? "wrap" : "nowrap",
       background:"rgba(216,208,192,0.82)",
       border:"2px solid #A09880",
       borderRadius:6, padding:"5px 8px",
@@ -650,11 +655,12 @@ function PlayerBenchBar({ bench }) {
 // ─── CARD VISUAL (shared between idle and dragging ghost) ────
 
 function CardFace({ card, col, isSelected, isDragging, effectiveCost }) {
+  const isMobile = useIsMobile();
   const isAttack = card.tags.includes("attack");
   const isDefend = card.tags.includes("defend");
   return (
     <div style={{
-      width:58, height:78, position:"relative", overflow:"hidden",
+      width: isMobile ? 64 : 58, height: isMobile ? 86 : 78, position:"relative", overflow:"hidden",
       background: isDragging ? col.bg : isSelected ? col.bg : "#FFFEF5",
       border:`2.5px solid ${isDragging || isSelected ? col.mid : "#C8C0A0"}`,
       borderRadius:7,
@@ -827,6 +833,7 @@ function DraggableCard({ cardId, slotIdx, isSelected, isPlayable, bobDelay, effe
 // ─── RELIC BAR ───────────────────────────────────────────────
 
 function RelicBar({ relicIds }) {
+  const isMobile = useIsMobile();
   if (!relicIds || relicIds.length === 0) return null;
   // Import relic names inline from the small lookup we have available
   const RELIC_NAMES = {
@@ -840,7 +847,9 @@ function RelicBar({ relicIds }) {
   };
   return (
     <div style={{
-      display:"flex", gap:5, flexWrap:"wrap",
+      display:"flex", gap:5, flexWrap: isMobile ? "nowrap" : "wrap",
+      overflowX: isMobile ? "auto" : "visible",
+      WebkitOverflowScrolling:"touch",
       padding:"6px 10px",
       background:"#E0DCC8",
       border:"2px solid #A0987A",
@@ -907,6 +916,7 @@ function classifyMessage(msg) {
 }
 
 function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onEndTurn, isPlayerTurn, isEnemyStep, onAdvanceQueue, energy, maxEnergy = 3 }) {
+  const isMobile = useIsMobile();
   const ref = useRef(null);
   // Track which log index was the "newest" last render so we only animate truly new entries
   const prevLogLen = useRef(log.length);
@@ -924,7 +934,7 @@ function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onE
       background:"linear-gradient(160deg, #1A1610 0%, #120F08 100%)",
       border:"2px solid #5A4E32",
       borderRadius:8,
-      padding:"8px 12px 10px",
+      padding: isMobile ? "6px 8px 8px" : "8px 12px 10px",
       boxShadow:"inset 0 0 30px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.5)",
       position:"relative",
     }}>
@@ -936,7 +946,7 @@ function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onE
 
       {/* Log area */}
       <div ref={ref} style={{
-        height:80, overflowY:"auto", overflowX:"hidden",
+        height: isMobile ? 56 : 80, overflowY:"auto", overflowX:"hidden",
         marginBottom:8, display:"flex", flexDirection:"column", gap:1,
         scrollbarWidth:"none",
       }}>
@@ -1101,6 +1111,7 @@ function PokeButton({ color, dark, textColor = "#fff", onClick, children }) {
 
 export default function CombatUI({ initialState, relics = [], onVictory, onDefeat } = {}) {
   // If no initialState supplied (standalone dev mode), fall back to mock
+  const isMobile = useIsMobile();
   const startState = initialState ?? MOCK_STATE;
   const [state, setState]           = useState(startState);
   const [selectedCard, setSelected] = useState(null);
@@ -1656,10 +1667,28 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
     });
 
     const activeCount = newActive.filter(s => s && s.creature.currentHp > 0).length;
+
+    // Slow: each creature with slow reduces energy by 1 per stack
+    const slowPenalty = newActive.reduce((total, s) => {
+      if (!s) return total;
+      const slow = s.creature.statusEffects.find(e => e.type === 'slow');
+      return total + (slow?.stacks ?? 0);
+    }, 0);
+
+    // Energy drain: each creature with energy_drain reduces energy by stacks
+    const drainPenalty = newActive.reduce((total, s) => {
+      if (!s) return total;
+      const drain = s.creature.statusEffects.find(e => e.type === 'energy_drain');
+      return total + (drain?.stacks ?? 0);
+    }, 0);
+
+    const baseEnergy = BASE_ENERGY_PER_TURN * Math.max(1, activeCount);
+    const finalEnergy = Math.max(0, baseEnergy - slowPenalty - drainPenalty);
+
     return {
       ...tickedState,
       phase: 'player',
-      sharedEnergy: BASE_ENERGY_PER_TURN * Math.max(1, activeCount),
+      sharedEnergy: finalEnergy,
       turn: (afterEnemyState.turn ?? 1) + 1,
       player: { ...tickedState.player, active: newActive },
       log: [...tickedState.log, `--- Turn ${(afterEnemyState.turn ?? 1) + 1} (player) ---`],
@@ -1807,13 +1836,15 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
       fontFamily:"'Courier New', monospace",
       background:"#F0EFE0",
       minHeight:"100vh",
-      padding:14,
+      padding: isMobile ? 8 : 14,
       boxSizing:"border-box",
       maxWidth:820,
+      width:"100%",
       margin:"0 auto",
       position:"relative",
       userSelect: drag ? "none" : "auto",
       touchAction: "pan-y",
+      overflowX: "hidden",
     }}>
 
       {/* ─── Relic bar ── */}
@@ -1828,8 +1859,8 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
         overflow:"hidden",
         marginBottom:10,
         boxShadow:"inset 0 0 50px rgba(0,0,0,0.12), 3px 4px 0 rgba(128,120,96,0.4)",
-        padding:"14px 16px 16px",
-        minHeight:300,
+        padding: isMobile ? "10px 8px 10px" : "14px 16px 16px",
+        minHeight: isMobile ? 200 : 300,
       }}>
         {/* Round badge */}
         <div style={{
@@ -1846,7 +1877,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
         {/* Enemy creatures — centered in the top half */}
         <div style={{
           display:"flex", justifyContent:"center", alignItems:"flex-end",
-          gap:20, marginTop:22, marginBottom:6,
+          gap: isMobile ? 10 : 20, marginTop: isMobile ? 14 : 22, marginBottom:6,
         }}>
           {displayState.enemy.active.map((slot, i) => (
             <div key={i} ref={el => enemySlotRefs.current[i] = el}
@@ -1866,8 +1897,9 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
 
         {/* Player row — each creature is a column: card above, hand below */}
         <div style={{
-          display:"flex", justifyContent:"space-between",
-          alignItems:"flex-start", gap:10, marginTop:8,
+          display:"flex", flexDirection: isMobile ? "column" : "row",
+          justifyContent:"space-between",
+          alignItems:"flex-start", gap: isMobile ? 6 : 10, marginTop:8,
         }}>
           <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
             {displayState.player.active.map((slot, slotIdx) => {
@@ -1885,7 +1917,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
                     padding:"6px 8px 6px",
                     marginTop:5,
                     overflow:"visible",
-                    minWidth:220,
+                    minWidth: isMobile ? 0 : 220,
                   }}>
                     <div style={{
                       fontSize:8, fontWeight:900, color:"#807860",
@@ -1901,10 +1933,11 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
                       )}
                     </div>
                     <div className="hand-card-row" style={{
-                      display:"flex", gap:5, overflowX:"auto",
-                      paddingBottom:8, paddingTop:8,
+                      display:"flex", gap: isMobile ? 4 : 5, overflowX:"auto",
+                      paddingBottom: isMobile ? 4 : 8, paddingTop: isMobile ? 4 : 8,
                       alignItems:"flex-end", overflowY:"hidden",
-                      height:100, boxSizing:"border-box",
+                      height: isMobile ? 80 : 100, boxSizing:"border-box",
+                      WebkitOverflowScrolling:"touch",
                     }}>
                       {slot.hand.length === 0 ? (
                         <div style={{
@@ -2124,8 +2157,30 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
               </div>
               {/* Description */}
               <div style={{ fontSize:9, color:"#504830", lineHeight:1.4, textAlign:"center", borderTop:`1px solid ${col.mid}33`, paddingTop:5, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:4, WebkitBoxOrient:"vertical" }}>
-                {card.description}
+                {liveDesc(card, slot?.creature)}
               </div>
+              {/* Stat lines — show effective (stat-scaled) values */}
+              {card.baseDamage > 0 && (
+                <div style={{ fontSize:9, color:"#F08050", fontWeight:700, marginTop:3 }}>
+                  ⚔ {effectiveDamage(card, slot?.creature)} dmg
+                  {statMod(slot?.creature?.stats?.[card.scalingStat ?? 'strength'] ?? 10) !== 0 &&
+                    <span style={{color:"#C07040",fontWeight:400}}> ({card.baseDamage}+{statMod(slot?.creature?.stats?.[card.scalingStat ?? 'strength'] ?? 10)})</span>}
+                </div>
+              )}
+              {card.shieldAmount > 0 && (
+                <div style={{ fontSize:9, color:"#5898F0", fontWeight:700, marginTop:2 }}>
+                  🛡 {effectiveShield(card, slot?.creature)} shield
+                  {statMod(slot?.creature?.stats?.[card.scalingStat ?? 'constitution'] ?? 10) !== 0 &&
+                    <span style={{color:"#4070C0",fontWeight:400}}> ({card.shieldAmount}+{statMod(slot?.creature?.stats?.[card.scalingStat ?? 'constitution'] ?? 10)})</span>}
+                </div>
+              )}
+              {card.healAmount > 0 && (
+                <div style={{ fontSize:9, color:"#58C870", fontWeight:700, marginTop:2 }}>
+                  💚 {effectiveHeal(card, slot?.creature)} heal
+                  {statMod(slot?.creature?.stats?.[card.scalingStat ?? 'wisdom'] ?? 10) !== 0 &&
+                    <span style={{color:"#409050",fontWeight:400}}> ({card.healAmount}+{statMod(slot?.creature?.stats?.[card.scalingStat ?? 'wisdom'] ?? 10)})</span>}
+                </div>
+              )}
               {/* Not playable reason */}
               {!isPlayable && isPlayerTurn && (
                 <div style={{ marginTop:5, fontSize:8, color:"#C04030", textAlign:"center", fontWeight:900 }}>

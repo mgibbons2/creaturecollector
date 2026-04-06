@@ -10,30 +10,12 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from "react";
+import { useIsMobile } from "./useMediaQuery.js";
 import { useRun, RunActions } from "./RunContext.jsx";
 import { CREATURE_DEFS } from "./creatureDefs.js";
+import { TYPE_COLORS, TYPE_SHAPES } from "./shared.js";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
-
-const TYPE_COLORS = {
-  fire:      { light:"#FF9741", mid:"#DD6610", dark:"#7A2410", bg:"#2a1208" },
-  water:     { light:"#74BCFF", mid:"#2B7FE8", dark:"#0E3577", bg:"#081828" },
-  earth:     { light:"#A8D070", mid:"#4A8C2A", dark:"#1A4A08", bg:"#0e1e08" },
-  wind:      { light:"#AAC8FF", mid:"#6070C8", dark:"#283080", bg:"#101228" },
-  shadow:    { light:"#C880FF", mid:"#7038A8", dark:"#2A1050", bg:"#140820" },
-  light:     { light:"#FFD060", mid:"#C89010", dark:"#604000", bg:"#201808" },
-  colorless: { light:"#C8C8C8", mid:"#888888", dark:"#333333", bg:"#181818" },
-};
-
-const TYPE_SHAPES = {
-  fire:      "M60,20 C60,20 70,40 55,55 C70,45 80,60 65,75 C75,65 85,75 75,90 C90,75 95,55 80,40Z",
-  water:     "M50,15 C50,15 65,35 65,55 A15,15 0 0,1 35,55 C35,35 50,15 50,15Z",
-  earth:     "M20,80 L50,20 L80,80Z",
-  wind:      "M15,50 C25,35 45,30 55,50 C45,42 50,55 40,65 C55,55 65,65 55,80 C70,65 75,45 60,35Z",
-  shadow:    "M50,10 L58,35 L85,35 L63,52 L72,78 L50,62 L28,78 L37,52 L15,35 L42,35Z",
-  light:     "M50,15 L55,38 L78,30 L62,48 L78,65 L55,58 L50,80 L45,58 L22,65 L38,48 L22,30 L45,38Z",
-  colorless: "M25,25 L75,25 L75,75 L25,75Z",
-};
 
 // Catch animation phases
 const PHASE = {
@@ -217,6 +199,7 @@ function CatchBall({ phase, success, creature }) {
 // ─── MAIN SCREEN ─────────────────────────────────────────────
 
 export default function CatchScreen() {
+  const isMobile = useIsMobile();
   const { run, dispatch } = useRun();
   const { pendingCatch, party } = run;
   const candidates = pendingCatch?.candidates ?? [];
@@ -344,7 +327,7 @@ export default function CatchScreen() {
           border:`3px solid ${result.success ? "#286020" : "#802020"}`,
           borderRadius:10, padding:"20px 28px",
           textAlign:"center", marginBottom:24,
-          maxWidth:320,
+          maxWidth:480, width:"100%",
         }}>
           <div style={{ fontSize:28, marginBottom:8 }}>
             {result.success ? "✦" : "✕"}
@@ -394,8 +377,8 @@ export default function CatchScreen() {
                 transition:"all 0.12s",
               }}
               onMouseDown={e => selected !== null && (e.currentTarget.style.transform="translateY(5px)")}
-              onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-              onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+              onMouseUp={e   => (e.currentTarget.style.transform="none")}
+              onMouseLeave={e=> (e.currentTarget.style.transform="none")}
             >
               THROW ◎
             </button>
@@ -432,9 +415,9 @@ export default function CatchScreen() {
             boxShadow:"0 5px 0 #504838",
             transition:"all 0.08s",
           }}
-          onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(5px)"}
-          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(5px)"}
+          onMouseUp={e   => e.currentTarget.style.transform="none"}
+          onMouseLeave={e=> e.currentTarget.style.transform="none"}
         >
           CONTINUE ▶
         </button>

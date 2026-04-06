@@ -5,37 +5,12 @@
 // ============================================================
 
 import { useState } from "react";
+import { useIsMobile } from "./useMediaQuery.js";
 import { useRun, RunActions } from "./RunContext.jsx";
 import { CARD_DEFS, getDraftPool } from "./cardDefs.js";
+import { RARITY_COLOR, TYPE_COLORS, TYPE_SHAPES, effectiveDamage, effectiveHeal, effectiveShield, liveDesc, shuffle, statMod } from "./shared.js";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
-
-const TYPE_COLORS = {
-  fire:      { light:"#FF9741", mid:"#DD6610", dark:"#7A2410", bg:"#2a1208" },
-  water:     { light:"#74BCFF", mid:"#2B7FE8", dark:"#0E3577", bg:"#081828" },
-  earth:     { light:"#A8D070", mid:"#4A8C2A", dark:"#1A4A08", bg:"#0e1e08" },
-  wind:      { light:"#AAC8FF", mid:"#6070C8", dark:"#283080", bg:"#101228" },
-  shadow:    { light:"#C880FF", mid:"#7038A8", dark:"#2A1050", bg:"#140820" },
-  light:     { light:"#FFD060", mid:"#C89010", dark:"#604000", bg:"#201808" },
-  colorless: { light:"#C8C8C8", mid:"#888888", dark:"#333333", bg:"#181818" },
-};
-
-const TYPE_SHAPES = {
-  fire:      "M60,20 C60,20 70,40 55,55 C70,45 80,60 65,75 C75,65 85,75 75,90 C90,75 95,55 80,40Z",
-  water:     "M50,15 C50,15 65,35 65,55 A15,15 0 0,1 35,55 C35,35 50,15 50,15Z",
-  earth:     "M20,80 L50,20 L80,80Z",
-  wind:      "M15,50 C25,35 45,30 55,50 C45,42 50,55 40,65 C55,55 65,65 55,80 C70,65 75,45 60,35Z",
-  shadow:    "M50,10 L58,35 L85,35 L63,52 L72,78 L50,62 L28,78 L37,52 L15,35 L42,35Z",
-  light:     "M50,15 L55,38 L78,30 L62,48 L78,65 L55,58 L50,80 L45,58 L22,65 L38,48 L22,30 L45,38Z",
-  colorless: "M25,25 L75,25 L75,75 L25,75Z",
-};
-
-const RARITY_COLOR = {
-  common:    "#807860",
-  uncommon:  "#4080C0",
-  rare:      "#A040D0",
-  legendary: "#D09020",
-};
 
 // Card costs scale by rarity
 const CARD_COSTS = { common: 30, uncommon: 55, rare: 90, legendary: 150 };
@@ -53,15 +28,6 @@ const SHOP_RELICS = [
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 // Build a shop stock once on mount
 function buildShopStock(party, floorNumber) {
@@ -174,7 +140,7 @@ function ShopCard({ card, creature, onBuy, bought, canAfford }) {
       </div>
 
       <div style={{ fontSize:7.5, color:"#605840", lineHeight:1.4, textAlign:"center", borderTop:"1px solid #252514", paddingTop:5, minHeight:26 }}>
-        {card.description}
+        {liveDesc(card, creature)}
       </div>
 
       {!bought && !disabled && (
@@ -264,6 +230,7 @@ function RelicCard({ relic, onBuy, bought, canAfford, owned }) {
 // ─── MAIN SCREEN ─────────────────────────────────────────────
 
 export default function ShopScreen() {
+  const isMobile = useIsMobile();
   const { run, dispatch } = useRun();
   const { party, gold, relics, map } = run;
   const floorNumber = map?.floorNumber ?? 1;
@@ -501,7 +468,7 @@ export default function ShopScreen() {
               background:"#1a1a10",
               border:`2px solid ${gold >= HEAL_COST ? "#406020" : "#252514"}`,
               borderRadius:8, padding:"16px",
-              maxWidth:320,
+              maxWidth:480, width:"100%",
             }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                 <span style={{ fontSize:13, fontWeight:900, color:"#E8E8D0" }}>Party Heal</span>
