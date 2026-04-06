@@ -10,13 +10,13 @@
 //    Right panel: Selected creature detail + deck list
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIsMobile } from "./useMediaQuery.js";
 import { useRun, RunActions } from "./RunContext.jsx";
 import { CARD_DEFS } from "./cardDefs.js";
 import { CREATURE_DEFS } from "./creatureDefs.js";
 import { getStageName } from "./creatureDefs.js";
-import { RARITY_COLOR, TYPE_COLORS, TYPE_SHAPES, effectiveDamage, effectiveHeal, effectiveShield, hpBarColor, hpPercent, statMod } from "./shared.js";
+import { RARITY_COLOR, TYPE_COLORS, TYPE_SHAPES, effectiveDamage, effectiveHeal, effectiveShield, hpBarColor, hpPercent, liveDesc, statMod } from "./shared.js";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 
@@ -299,9 +299,23 @@ function CardTooltip({ card, cardCol, isAttack, isDefend, x, y, creature }) {
   );
 }
 
-function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
+function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverCard }) {
   const [tab, setTab] = useState("stats"); // stats | deck
-  const [hoveredCard, setHoveredCard] = useState(null); // {card, x, y}
+
+  // Reset to stats tab when a different creature is selected
+  const creatureKey = creature?.defId ?? creature?.name ?? null;
+  useEffect(() => { setTab("stats"); }, [creatureKey]);
+
+  const col   = TYPE_COLORS[creature?.type] || TYPE_COLORS.colorless;
+  const def   = CREATURE_DEFS[creature?.defId];
+  const stage = creature ? getStageName(creature.level) : null;
+  const pct   = creature ? hpPct(creature) : 0;
+
+  // Unique cards in deck with counts
+  const deckCounts = {};
+  (creature?.deck ?? []).forEach(id => { deckCounts[id] = (deckCounts[id] || 0) + 1; });
+  const uniqueCards = Object.entries(deckCounts);
+
   if (!creature) return (
     <div style={{
       flex:1, display:"flex", alignItems:"center", justifyContent:"center",
@@ -311,16 +325,6 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
       SELECT A CREATURE
     </div>
   );
-
-  const col   = TYPE_COLORS[creature.type] || TYPE_COLORS.colorless;
-  const def   = CREATURE_DEFS[creature.defId];
-  const stage = getStageName(creature.level);
-  const pct   = hpPct(creature);
-
-  // Unique cards in deck with counts
-  const deckCounts = {};
-  creature.deck.forEach(id => { deckCounts[id] = (deckCounts[id] || 0) + 1; });
-  const uniqueCards = Object.entries(deckCounts);
 
   return (
     <div style={{
@@ -397,7 +401,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
       </div>
 
       {/* Tab content */}
-      <div style={{ flex:1, overflowY:"auto", padding:"12px 14px" }}>
+      <div style={{ flex:1, overflowY:"auto", overflowX:"visible", padding:"12px 14px" }}>
 
         {/* STATS TAB */}
         {tab === "stats" && (
@@ -539,9 +543,9 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
                   <div key={cardId} className="deck-card" 
                     onMouseEnter={e => {
                       const rect = e.currentTarget.getBoundingClientRect();
-                      setHoveredCard({ card, cardCol, isAttack, isDefend, x: rect.left + rect.width/2, y: rect.top });
+                      onHoverCard?.({ card, cardCol, isAttack, isDefend, x: rect.left + rect.width/2, y: rect.top });
                     }}
-                    onMouseLeave={() => setHoveredCard(null)}
+                    onMouseLeave={() => onHoverCard?.(null)}
                     style={{
                     position:"relative", width:88, height:124,
                     background:`linear-gradient(160deg, #FFFEF8 0%, #F8F4E8 100%)`,
@@ -635,18 +639,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature }) {
         )}
       </div>
 
-      {/* Fixed-position card tooltip */}
-      {hoveredCard && (
-        <CardTooltip
-          card={hoveredCard.card}
-          cardCol={hoveredCard.cardCol}
-          isAttack={hoveredCard.isAttack}
-          isDefend={hoveredCard.isDefend}
-          x={hoveredCard.x}
-          y={hoveredCard.y}
-          creature={creature}
-        />
-      )}
+
 
       {/* Swap out button — shown if this is a party slot and there's a roster swap pending */}
       {partyIndex !== null && partyIndex !== undefined && (
@@ -687,6 +680,7 @@ export default function PartyScreen({ onClose }) {
   const isMobile = useIsMobile();
   const { run, dispatch } = useRun();
   const { party, roster } = run;
+  const [hoveredCard, setHoveredCard] = useState(null);
 
   // Selection state: { source: "party"|"roster", index: number|defId }
   const [selection, setSelection]   = useState(null);
@@ -759,7 +753,7 @@ export default function PartyScreen({ onClose }) {
     setSelection(null);
   }
 
-  return (
+  return (<>
     <div style={{
       position:"fixed", inset:0, zIndex:1000,
       background:"rgba(10,10,8,0.96)",
@@ -897,14 +891,28 @@ export default function PartyScreen({ onClose }) {
         </div>
 
         {/* Right: Detail panel */}
-        <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+        <div style={{ flex:1, overflow:"visible", display:"flex", flexDirection:"column", minWidth:0 }}>
           <DetailPanel
             creature={selectedCreature}
             partyIndex={selectedPartyIndex}
             onSwapOut={handleSwapSlots}
+            onHoverCard={setHoveredCard}
           />
         </div>
       </div>
     </div>
-  );
+
+    {/* Card tooltip — rendered at screen level so it's never clipped */}
+    {hoveredCard && (
+      <CardTooltip
+        card={hoveredCard.card}
+        cardCol={hoveredCard.cardCol}
+        isAttack={hoveredCard.isAttack}
+        isDefend={hoveredCard.isDefend}
+        x={hoveredCard.x}
+        y={hoveredCard.y}
+        creature={selectedCreature}
+      />
+    )}
+  </>);
 }
