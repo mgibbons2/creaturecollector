@@ -94,10 +94,10 @@ function ChoiceButton({ choice, isDisabled, disabledReason, onClick }) {
           fontSize:11, fontWeight:900,
           textAlign:"left",
           background: isDisabled ? "#141410"
-                    : hovered    ? "#252514"
+                    : hovered    ? "#706040"
                     :              "#1a1a10",
-          color: isDisabled ? "#403828" : "#E8E8D0",
-          border:`2px solid ${isDisabled ? "#252514" : hovered ? "#807860" : "#302818"}`,
+          color: isDisabled ? "#907858" : "#E8E8D0",
+          border:`2px solid ${isDisabled ? "#706040" : hovered ? "#807860" : "#806854"}`,
           borderRadius:7, padding:"12px 14px",
           cursor: isDisabled ? "not-allowed" : "pointer",
           transition:"all 0.1s",
@@ -105,10 +105,10 @@ function ChoiceButton({ choice, isDisabled, disabledReason, onClick }) {
           lineHeight:1.4,
         }}
       >
-        <span style={{ color: isDisabled ? "#403828" : "#C89010", marginRight:8 }}>▸</span>
+        <span style={{ color: isDisabled ? "#907858" : "#C89010", marginRight:8 }}>▸</span>
         {choice.label}
         {isDisabled && disabledReason && (
-          <span style={{ fontSize:9, color:"#603030", marginLeft:8, fontWeight:400 }}>
+          <span style={{ fontSize:13, color:"#603030", marginLeft:8, fontWeight:400 }}>
             ({disabledReason})
           </span>
         )}
@@ -181,7 +181,7 @@ export default function EventScreen() {
         <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16 }}>
           <div style={{
             fontSize:28, lineHeight:1,
-            background:"#252514",
+            background:"#706040",
             border:"2px solid #403828",
             borderRadius:8, padding:"8px 12px",
             flexShrink:0,
@@ -190,8 +190,8 @@ export default function EventScreen() {
           </div>
           <div>
             <div style={{
-              fontSize:8, color:"#504838",
-              letterSpacing:"0.2em", textTransform:"uppercase",
+              fontSize:12, color:"#A08868",
+              letterSpacing:"0.05em", textTransform:"uppercase",
               marginBottom:4,
             }}>
               ? EVENT · Floor {run.map?.floorNumber ?? 1}
@@ -206,7 +206,7 @@ export default function EventScreen() {
         </div>
 
         {/* Divider */}
-        <div style={{ height:1, background:"#252514", margin:"0 0 18px" }} />
+        <div style={{ height:1, background:"#706040", margin:"0 0 18px" }} />
 
         {/* Narrative */}
         <p style={{
@@ -301,15 +301,15 @@ export default function EventScreen() {
               borderRadius:6, padding:"6px 10px",
             }}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                <span style={{ fontSize:9, fontWeight:900, color:"#E8E8D0" }}>{c.name}</span>
-                <span style={{ fontSize:8, color:typeCol }}>Lv{c.level}</span>
+                <span style={{ fontSize:13, fontWeight:900, color:"#E8E8D0" }}>{c.name}</span>
+                <span style={{ fontSize:12, color:typeCol }}>Lv{c.level}</span>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                <span style={{ fontSize:7, fontWeight:900, color:"#38A018", minWidth:12 }}>HP</span>
-                <div style={{ flex:1, height:4, background:"#302818", borderRadius:2, overflow:"hidden" }}>
+                <span style={{ fontSize:11, fontWeight:900, color:"#38A018", minWidth:12 }}>HP</span>
+                <div style={{ flex:1, height:4, background:"#806854", borderRadius:2, overflow:"hidden" }}>
                   <div style={{ height:"100%", width:`${pct}%`, background:hpCol, borderRadius:2 }} />
                 </div>
-                <span style={{ fontSize:7, color:"#605840" }}>{c.currentHp}/{c.maxHp}</span>
+                <span style={{ fontSize:11, color:"#B09870" }}>{c.currentHp}/{c.maxHp}</span>
               </div>
             </div>
           );

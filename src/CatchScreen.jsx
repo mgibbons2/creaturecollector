@@ -46,7 +46,7 @@ function TargetCard({ candidate, isSelected, isDisabled, onClick }) {
       onClick={!isDisabled ? onClick : undefined}
       style={{
         background: isSelected ? col.bg : "#1a1a10",
-        border: `3px solid ${isSelected ? col.mid : isDisabled ? "#252514" : col.mid + "55"}`,
+        border: `3px solid ${isSelected ? col.mid : isDisabled ? "#706040" : col.mid + "55"}`,
         borderRadius: 10,
         padding: "16px 14px",
         cursor: isDisabled ? "default" : "pointer",
@@ -81,7 +81,7 @@ function TargetCard({ candidate, isSelected, isDisabled, onClick }) {
         <div style={{ fontSize:13, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.04em" }}>
           {creature.name}
         </div>
-        <div style={{ fontSize:9, color:col.light, marginTop:2 }}>
+        <div style={{ fontSize:13, color:col.light, marginTop:2 }}>
           {creature.type.toUpperCase()} · Lv{creature.level}
         </div>
       </div>
@@ -89,10 +89,10 @@ function TargetCard({ candidate, isSelected, isDisabled, onClick }) {
       {/* HP bar */}
       <div style={{ marginBottom:8 }}>
         <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-          <span style={{ fontSize:8, fontWeight:900, color:"#38A018" }}>HP</span>
-          <span style={{ fontSize:8, color:"#605840" }}>{creature.currentHp}/{creature.maxHp}</span>
+          <span style={{ fontSize:12, fontWeight:900, color:"#38A018" }}>HP</span>
+          <span style={{ fontSize:12, color:"#B09870" }}>{creature.currentHp}/{creature.maxHp}</span>
         </div>
-        <div style={{ height:6, background:"#302818", borderRadius:3, overflow:"hidden" }}>
+        <div style={{ height:6, background:"#806854", borderRadius:3, overflow:"hidden" }}>
           <div style={{ height:"100%", width:`${pct}%`, background:hpCol, borderRadius:3 }} />
         </div>
       </div>
@@ -103,7 +103,7 @@ function TargetCard({ candidate, isSelected, isDisabled, onClick }) {
         background:"#141410", border:`1px solid ${catchCol}44`,
         borderRadius:5, padding:"5px 8px",
       }}>
-        <span style={{ fontSize:8, color:"#605840", letterSpacing:"0.06em" }}>CATCH CHANCE</span>
+        <span style={{ fontSize:12, color:"#B09870", letterSpacing:"0.06em" }}>CATCH CHANCE</span>
         <span style={{ fontSize:13, fontWeight:900, color:catchCol }}>
           {catchPct}%
         </span>
@@ -111,7 +111,7 @@ function TargetCard({ candidate, isSelected, isDisabled, onClick }) {
 
       {/* Evolution preview */}
       {CREATURE_DEFS[creature.defId] && (
-        <div style={{ marginTop:8, fontSize:7.5, color:"#403828", textAlign:"center", lineHeight:1.5 }}>
+        <div style={{ marginTop:8, fontSize:11, color:"#907858", textAlign:"center", lineHeight:1.5 }}>
           {CREATURE_DEFS[creature.defId].stages.baby.name}
           {" → "}
           {CREATURE_DEFS[creature.defId].stages.adult.name}
@@ -258,7 +258,7 @@ export default function CatchScreen() {
 
       {/* Header */}
       <div style={{ textAlign:"center", marginBottom:28 }}>
-        <div style={{ fontSize:10, color:"#504838", letterSpacing:"0.2em", marginBottom:8 }}>
+        <div style={{ fontSize:10, color:"#A08868", letterSpacing:"0.05em", marginBottom:8 }}>
           ✦ CATCH A CREATURE ✦
         </div>
         <h2 style={{
@@ -280,7 +280,7 @@ export default function CatchScreen() {
             : "The creature escaped."}
         </h2>
         {animPhase === PHASE.PICK && (
-          <p style={{ fontSize:9, color:"#504838", letterSpacing:"0.06em", margin:0 }}>
+          <p style={{ fontSize:13, color:"#A08868", letterSpacing:"0.06em", margin:0 }}>
             You can attempt to catch one creature. Lower HP = higher chance.
             {partyFull && " Your party is full — caught creature goes to your roster."}
           </p>
@@ -335,7 +335,7 @@ export default function CatchScreen() {
           <div style={{ fontSize:14, fontWeight:900, color:"#E8E8D0", marginBottom:6 }}>
             {result.success ? `${result.creature.name} caught!` : "Better luck next time."}
           </div>
-          <p style={{ fontSize:9, color:"#605840", lineHeight:1.6, margin:0 }}>
+          <p style={{ fontSize:13, color:"#B09870", lineHeight:1.6, margin:0 }}>
             {result.success
               ? partyFull
                 ? `${result.creature.name} has been added to your roster. Swap them into your party from the party screen.`
@@ -367,9 +367,9 @@ export default function CatchScreen() {
               style={{
                 fontFamily:"'Courier New', monospace",
                 fontSize:13, fontWeight:900,
-                background: selected !== null ? "#E8E8D0" : "#252514",
-                color:      selected !== null ? "#302810" : "#403828",
-                border:`4px solid ${selected !== null ? "#807860" : "#302818"}`,
+                background: selected !== null ? "#E8E8D0" : "#706040",
+                color:      selected !== null ? "#302810" : "#907858",
+                border:`4px solid ${selected !== null ? "#807860" : "#806854"}`,
                 borderRadius:6, padding:"11px 32px",
                 cursor: selected !== null ? "pointer" : "not-allowed",
                 letterSpacing:"0.1em",
@@ -389,7 +389,7 @@ export default function CatchScreen() {
                 fontFamily:"'Courier New', monospace",
                 fontSize:11, fontWeight:900,
                 background:"transparent",
-                color:"#504838",
+                color:"#A08868",
                 border:"2px solid #302818",
                 borderRadius:5, padding:"9px 18px",
                 cursor:"pointer", letterSpacing:"0.08em",
@@ -426,7 +426,7 @@ export default function CatchScreen() {
       {/* Party preview — show current party state */}
       {animPhase === PHASE.PICK && (
         <div style={{ marginTop:28, width:"100%", maxWidth:560 }}>
-          <div style={{ fontSize:8, color:"#302818", letterSpacing:"0.1em", marginBottom:8, textAlign:"center" }}>
+          <div style={{ fontSize:12, color:"#806854", letterSpacing:"0.1em", marginBottom:8, textAlign:"center" }}>
             YOUR PARTY ({party.length}/6)
           </div>
           <div style={{ display:"flex", gap:6, justifyContent:"center", flexWrap:"wrap" }}>
@@ -439,8 +439,8 @@ export default function CatchScreen() {
                   display:"flex", alignItems:"center", gap:5,
                 }}>
                   <div style={{ width:6, height:6, borderRadius:"50%", background:col.mid }} />
-                  <span style={{ fontSize:9, fontWeight:900, color:"#E8E8D0" }}>{c.name}</span>
-                  <span style={{ fontSize:8, color:col.light }}>Lv{c.level}</span>
+                  <span style={{ fontSize:13, fontWeight:900, color:"#E8E8D0" }}>{c.name}</span>
+                  <span style={{ fontSize:12, color:col.light }}>Lv{c.level}</span>
                 </div>
               );
             })}
@@ -449,7 +449,7 @@ export default function CatchScreen() {
                 background:"transparent", border:"1.5px dashed #252514",
                 borderRadius:5, padding:"4px 10px", minWidth:60,
               }}>
-                <span style={{ fontSize:8, color:"#252514" }}>OPEN</span>
+                <span style={{ fontSize:12, color:"#706040" }}>OPEN</span>
               </div>
             ))}
           </div>

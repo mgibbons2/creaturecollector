@@ -182,7 +182,7 @@ function Rule() {
 
 function Heading({ children }) {
   return (
-    <div style={{ fontSize:11, fontWeight:900, letterSpacing:"0.25em", color:C.dim,
+    <div style={{ fontSize:11, fontWeight:900, letterSpacing:"0.06em", color:C.dim,
       textTransform:"uppercase", marginBottom:12, marginTop:4 }}>
       {children}
     </div>
@@ -211,7 +211,7 @@ function ChapterIntro() {
     <div>
       <div style={{ textAlign:"center", marginBottom:24 }}>
         <div style={{ fontSize:36, marginBottom:8 }}>📖</div>
-        <div style={{ fontSize:16, fontWeight:900, color:C.gold, letterSpacing:"0.2em", marginBottom:6 }}>
+        <div style={{ fontSize:16, fontWeight:900, color:C.gold, letterSpacing:"0.05em", marginBottom:6 }}>
           CREATURE COLLECTOR
         </div>
         <div style={{ fontSize:10, color:C.dim, letterSpacing:"0.15em" }}>COMPLETE FIELD GUIDE</div>
@@ -238,7 +238,7 @@ function ChapterIntro() {
         ["5. REACH THE BOSS",  "Every floor ends with a boss encounter. Beat it to advance deeper."],
       ].map(([title, desc]) => (
         <div key={title} style={{ display:"flex", gap:10, marginBottom:10, alignItems:"flex-start" }}>
-          <div style={{ fontSize:9, fontWeight:900, color:C.gold, letterSpacing:"0.08em",
+          <div style={{ fontSize:13, fontWeight:900, color:C.gold, letterSpacing:"0.08em",
             background:C.faint, borderRadius:3, padding:"2px 7px", flexShrink:0, marginTop:2 }}>
             {title}
           </div>
@@ -312,7 +312,7 @@ function ChapterCombat() {
         ["REPEAT",            "Back to player turn"],
       ].map(([phase, desc]) => (
         <div key={phase} style={{ borderLeft:`2px solid ${C.border}`, paddingLeft:10, marginBottom:10 }}>
-          <div style={{ fontSize:9, fontWeight:900, color:C.gold, letterSpacing:"0.1em", marginBottom:3 }}>{phase}</div>
+          <div style={{ fontSize:13, fontWeight:900, color:C.gold, letterSpacing:"0.1em", marginBottom:3 }}>{phase}</div>
           <div style={{ fontSize:10.5, color:C.text, lineHeight:1.6 }}>{desc}</div>
         </div>
       ))}
@@ -346,7 +346,7 @@ function ChapterCards() {
       <Heading>CARD TYPES</Heading>
       {tags.map(t => (
         <div key={t.tag} style={{ display:"flex", gap:10, marginBottom:8, alignItems:"flex-start" }}>
-          <span style={{ fontSize:9, fontWeight:900, background:t.color+"22", color:t.color,
+          <span style={{ fontSize:13, fontWeight:900, background:t.color+"22", color:t.color,
             border:`1px solid ${t.color}44`, borderRadius:3, padding:"2px 7px",
             letterSpacing:"0.08em", flexShrink:0, minWidth:58, textAlign:"center" }}>
             {t.icon} {t.tag}
@@ -380,7 +380,7 @@ function ChapterCards() {
       <Heading>CARD RARITY</Heading>
       <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
         {rarities.map(r => (
-          <span key={r.label} style={{ fontSize:9, fontWeight:900, padding:"3px 10px",
+          <span key={r.label} style={{ fontSize:13, fontWeight:900, padding:"3px 10px",
             border:`1px solid ${r.color}66`, color:r.color, borderRadius:3, letterSpacing:"0.1em" }}>
             {r.label}
           </span>
@@ -397,7 +397,7 @@ function ChapterCards() {
         { kw:"MULTI-HIT",   desc:"Strikes multiple times in one card play." },
       ].map(({kw, desc}) => (
         <div key={kw} style={{ marginBottom:8 }}>
-          <span style={{ fontSize:9, fontWeight:900, color:C.gold, letterSpacing:"0.1em",
+          <span style={{ fontSize:13, fontWeight:900, color:C.gold, letterSpacing:"0.1em",
             background:C.faint, padding:"2px 7px", borderRadius:3 }}>{kw}</span>
           <span style={{ fontSize:10.5, color:C.text, marginLeft:8 }}>{desc}</span>
         </div>
@@ -487,7 +487,7 @@ function ChapterTypes() {
 
       {/* Type chart table */}
       <div style={{ overflowX:"auto" }}>
-        <table style={{ borderCollapse:"collapse", fontSize:9, width:"100%" }}>
+        <table style={{ borderCollapse:"collapse", fontSize:13, width:"100%" }}>
           <thead>
             <tr>
               <th style={{ padding:"4px 6px", color:C.dim, textAlign:"left", fontWeight:900,
@@ -495,7 +495,7 @@ function ChapterTypes() {
               {TYPES.map(t => (
                 <th key={t} style={{ padding:"4px 6px", color:TYPE_COLORS[t].light,
                   fontWeight:900, letterSpacing:"0.05em", borderBottom:`1px solid ${C.border}`,
-                  textTransform:"uppercase", fontSize:8 }}>
+                  textTransform:"uppercase", fontSize:12 }}>
                   {TYPE_ICONS[t]} {t.slice(0,3)}
                 </th>
               ))}
@@ -505,7 +505,7 @@ function ChapterTypes() {
             {TYPES.map(atk => (
               <tr key={atk}>
                 <td style={{ padding:"4px 6px", color:TYPE_COLORS[atk].light,
-                  fontWeight:900, fontSize:8, letterSpacing:"0.05em", textTransform:"uppercase",
+                  fontWeight:900, fontSize:12, letterSpacing:"0.05em", textTransform:"uppercase",
                   borderBottom:`1px solid ${C.faint}` }}>
                   {TYPE_ICONS[atk]} {atk.slice(0,3).toUpperCase()}
                 </td>
@@ -545,7 +545,7 @@ function ChapterTypes() {
         <div key={type} style={{ display:"flex", gap:10, marginBottom:8 }}>
           <span style={{ fontSize:14, flexShrink:0 }}>{TYPE_ICONS[type]}</span>
           <div>
-            <div style={{ fontSize:9, fontWeight:900, color:TYPE_COLORS[type].light,
+            <div style={{ fontSize:13, fontWeight:900, color:TYPE_COLORS[type].light,
               letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:2 }}>{type}</div>
             <div style={{ fontSize:10.5, color:C.text, lineHeight:1.6 }}>{tip}</div>
           </div>
@@ -576,7 +576,7 @@ function ChapterStats() {
           <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4 }}>
             <span style={{ fontSize:14 }}>{icon}</span>
             <span style={{ fontSize:10, fontWeight:900, color, letterSpacing:"0.1em" }}>{stat}</span>
-            <span style={{ fontSize:9, color:C.dim, marginLeft:"auto",
+            <span style={{ fontSize:13, color:C.dim, marginLeft:"auto",
               background:C.faint, padding:"1px 6px", borderRadius:3 }}>{mod}</span>
           </div>
           <div style={{ fontSize:10.5, color:C.text, lineHeight:1.6 }}>{desc}</div>
@@ -757,7 +757,7 @@ export default function GuideBook({ onClose }) {
               <div style={{ fontSize:12, fontWeight:900, color:C.gold, letterSpacing:"0.15em" }}>
                 FIELD GUIDE
               </div>
-              <div style={{ fontSize:8, color:C.dim, letterSpacing:"0.12em" }}>
+              <div style={{ fontSize:12, color:C.dim, letterSpacing:"0.12em" }}>
                 CREATURE COLLECTOR — COMPLETE MANUAL
               </div>
             </div>
@@ -801,7 +801,7 @@ export default function GuideBook({ onClose }) {
                   borderBottom: isMobile ? (active ? `3px solid ${C.gold}` : "3px solid transparent") : "none",
                   color: active ? C.gold : C.dim,
                   fontFamily:"'Courier New', monospace",
-                  fontSize:9, fontWeight:900, letterSpacing:"0.12em",
+                  fontSize:13, fontWeight:900, letterSpacing:"0.12em",
                   padding: isMobile ? "8px 10px" : "9px 10px 9px 11px",
                   textAlign:"left", cursor:"pointer",
                   display:"flex", alignItems:"center", gap:6,

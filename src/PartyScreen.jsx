@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { useIsMobile } from "./useMediaQuery.js";
 import { useRun, RunActions } from "./RunContext.jsx";
 import { CARD_DEFS } from "./cardDefs.js";
+import { CardTooltip } from "./CardTooltip.jsx";
 import { CREATURE_DEFS } from "./creatureDefs.js";
 import { getStageName } from "./creatureDefs.js";
 import { RARITY_COLOR, TYPE_COLORS, TYPE_SHAPES, effectiveDamage, effectiveHeal, effectiveShield, hpBarColor, hpPercent, liveDesc, statMod } from "./shared.js";
@@ -61,8 +62,8 @@ function PartySlot({
         border: `2.5px solid ${
           isDragOver ? "#807860"
           : isSelected ? col?.mid ?? "#807860"
-          : isActive ? "#504838"
-          : "#252514"
+          : isActive ? "#A08868"
+          : "#706040"
         }`,
         borderRadius: 8,
         padding: "10px 12px",
@@ -78,7 +79,7 @@ function PartySlot({
       {isActive && (
         <div style={{
           position:"absolute", top:-8, left:8,
-          fontSize:7, fontWeight:900,
+          fontSize:11, fontWeight:900,
           background:"#E84040", color:"#fff",
           padding:"1px 6px", borderRadius:3,
           letterSpacing:"0.1em",
@@ -89,7 +90,7 @@ function PartySlot({
 
       {/* Slot number */}
       <div style={{
-        fontSize:9, fontWeight:900, color:"#302818",
+        fontSize:13, fontWeight:900, color:"#806854",
         minWidth:14, textAlign:"center", flexShrink:0,
       }}>
         {slotIndex + 1}
@@ -98,7 +99,7 @@ function PartySlot({
       {isEmpty ? (
         <div style={{
           flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:9, color:"#252514", letterSpacing:"0.1em",
+          fontSize:13, color:"#706040", letterSpacing:"0.1em",
           border:"1.5px dashed #252514", borderRadius:5,
           height:52, fontFamily:"'Courier New', monospace",
         }}>
@@ -112,19 +113,19 @@ function PartySlot({
               <span style={{ fontSize:11, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.02em" }}>
                 {creature.name}
               </span>
-              <span style={{ fontSize:8, color: col?.light }}>Lv{creature.level}</span>
+              <span style={{ fontSize:12, color: col?.light }}>Lv{creature.level}</span>
             </div>
             {/* HP bar */}
             <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-              <span style={{ fontSize:7, fontWeight:900, color:"#38A018", minWidth:12 }}>HP</span>
-              <div style={{ flex:1, height:5, background:"#302818", borderRadius:2, overflow:"hidden" }}>
+              <span style={{ fontSize:11, fontWeight:900, color:"#38A018", minWidth:12 }}>HP</span>
+              <div style={{ flex:1, height:5, background:"#806854", borderRadius:2, overflow:"hidden" }}>
                 <div style={{ height:"100%", width:`${pct}%`, background:hpColor(pct), borderRadius:2, transition:"width 0.3s" }} />
               </div>
-              <span style={{ fontSize:7, color:"#605840" }}>{creature.currentHp}/{creature.maxHp}</span>
+              <span style={{ fontSize:11, color:"#B09870" }}>{creature.currentHp}/{creature.maxHp}</span>
             </div>
             {/* XP bar */}
             {creature.xpNext && (
-              <div style={{ marginTop:3, height:2, background:"#302818", borderRadius:1, overflow:"hidden" }}>
+              <div style={{ marginTop:3, height:2, background:"#806854", borderRadius:1, overflow:"hidden" }}>
                 <div style={{
                   height:"100%",
                   width:`${Math.min(100, Math.round((creature.xp / creature.xpNext) * 100))}%`,
@@ -135,7 +136,7 @@ function PartySlot({
           </div>
           {/* AC pill */}
           <div style={{
-            fontSize:8, color:"#605840",
+            fontSize:12, color:"#B09870",
             background:"#141410", border:"1px solid #252514",
             borderRadius:4, padding:"2px 5px", flexShrink:0,
           }}>
@@ -158,7 +159,7 @@ function RosterCard({ creature, isInParty, isSelected, onSelect, onAddToParty, p
       onClick={() => onSelect(creature.defId, "roster")}
       style={{
         background: isSelected ? col.bg : "#1a1a10",
-        border:`2px solid ${isSelected ? col.mid : isInParty ? col.mid + "55" : "#252514"}`,
+        border:`2px solid ${isSelected ? col.mid : isInParty ? col.mid + "55" : "#706040"}`,
         borderRadius:8, padding:"10px 12px",
         cursor:"pointer",
         transition:"all 0.12s",
@@ -170,7 +171,7 @@ function RosterCard({ creature, isInParty, isSelected, onSelect, onAddToParty, p
       {isInParty && (
         <div style={{
           position:"absolute", top:-7, right:8,
-          fontSize:7, fontWeight:900,
+          fontSize:11, fontWeight:900,
           background: col.mid, color:"#fff",
           padding:"1px 5px", borderRadius:3,
           letterSpacing:"0.08em",
@@ -184,11 +185,11 @@ function RosterCard({ creature, isInParty, isSelected, onSelect, onAddToParty, p
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:3 }}>
           <span style={{ fontSize:10, fontWeight:900, color:"#E8E8D0" }}>{creature.name}</span>
-          <span style={{ fontSize:8, color:col.light }}>Lv{creature.level}</span>
+          <span style={{ fontSize:12, color:col.light }}>Lv{creature.level}</span>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-          <span style={{ fontSize:7, fontWeight:900, color:"#38A018", minWidth:12 }}>HP</span>
-          <div style={{ flex:1, height:4, background:"#302818", borderRadius:2, overflow:"hidden" }}>
+          <span style={{ fontSize:11, fontWeight:900, color:"#38A018", minWidth:12 }}>HP</span>
+          <div style={{ flex:1, height:4, background:"#806854", borderRadius:2, overflow:"hidden" }}>
             <div style={{ height:"100%", width:`${pct}%`, background:hpColor(pct), borderRadius:2 }} />
           </div>
         </div>
@@ -201,10 +202,10 @@ function RosterCard({ creature, isInParty, isSelected, onSelect, onAddToParty, p
           title={partyFull ? "Party is full (6/6)" : "Add to party"}
           style={{
             fontFamily:"'Courier New', monospace",
-            fontSize:9, fontWeight:900,
-            background: partyFull ? "#252514" : col.mid,
-            color: partyFull ? "#403828" : "#fff",
-            border:`2px solid ${partyFull ? "#302818" : col.dark}`,
+            fontSize:13, fontWeight:900,
+            background: partyFull ? "#706040" : col.mid,
+            color: partyFull ? "#907858" : "#fff",
+            border:`2px solid ${partyFull ? "#806854" : col.dark}`,
             borderRadius:4, padding:"3px 8px",
             cursor: partyFull ? "not-allowed" : "pointer",
             flexShrink:0,
@@ -218,86 +219,6 @@ function RosterCard({ creature, isInParty, isSelected, onSelect, onAddToParty, p
 }
 
 // ─── DETAIL PANEL ────────────────────────────────────────────
-
-function CardTooltip({ card, cardCol, isAttack, isDefend, x, y, creature }) {
-  const tipW = 190;
-  const left = Math.max(8, Math.min(x - tipW / 2, 1400 - tipW));
-  const top = y - 12;
-  const col = cardCol;
-  return (
-    <div style={{
-      position:"fixed",
-      left, top,
-      transform:"translateY(-100%)",
-      width:tipW,
-      background:"linear-gradient(160deg, #1E1A12 0%, #120F08 100%)",
-      border:`2px solid ${col.mid}`,
-      borderRadius:10,
-      padding:"12px 14px",
-      boxShadow:`0 12px 32px rgba(0,0,0,0.85), 0 0 0 1px ${col.dark}, 0 0 16px ${col.mid}44`,
-      pointerEvents:"none",
-      zIndex:9999,
-      fontFamily:"'Courier New', monospace",
-    }}>
-      {/* Colour bar */}
-      <div style={{ height:2, borderRadius:1, marginBottom:8,
-        background:`linear-gradient(to right,${col.light},${col.mid})` }} />
-      {/* Name */}
-      <div style={{ fontSize:12, fontWeight:900, color:col.light,
-        marginBottom:5, letterSpacing:"0.04em" }}>
-        {card.name.toUpperCase()}
-      </div>
-      {/* Tag + cost */}
-      <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:8 }}>
-        <span style={{ fontSize:9, fontWeight:900, padding:"2px 7px", borderRadius:3,
-          background: isAttack?"#D06020":isDefend?"#4060D0":"#409030",
-          color:"#fff", letterSpacing:"0.05em" }}>
-          {isAttack?"ATK":isDefend?"DEF":"UTL"}
-        </span>
-        <span style={{ fontSize:9, color:"#A09070" }}>⚡ {card.energyCost}</span>
-      </div>
-      {/* Description */}
-      <div style={{ fontSize:10, color:"#C8B890", lineHeight:1.6, marginBottom:8 }}>
-        {liveDesc(card, creature)}
-      </div>
-      {/* Stat lines */}
-      <div style={{ display:"flex", flexDirection:"column", gap:4,
-        borderTop:`1px solid ${col.mid}44`, paddingTop:8 }}>
-        {card.baseDamage > 0 && (
-          <div style={{ fontSize:9, color:"#F08050", fontWeight:700 }}>
-            ⚔ {effectiveDamage(card, creature)} dmg
-            {statMod(creature?.stats?.[card.scalingStat ?? 'strength'] ?? 10) !== 0 &&
-              <span style={{color:"#C07040",fontWeight:400}}> ({card.baseDamage}+{statMod(creature?.stats?.[card.scalingStat ?? 'strength'] ?? 10)})</span>}
-          </div>
-        )}
-        {card.shieldAmount > 0 && (
-          <div style={{ fontSize:9, color:"#5898F0", fontWeight:700 }}>
-            🛡 {effectiveShield(card, creature)} shield
-            {statMod(creature?.stats?.[card.scalingStat ?? 'constitution'] ?? 10) !== 0 &&
-              <span style={{color:"#4070C0",fontWeight:400}}> ({card.shieldAmount}+{statMod(creature?.stats?.[card.scalingStat ?? 'constitution'] ?? 10)})</span>}
-          </div>
-        )}
-        {card.healAmount > 0 && (
-          <div style={{ fontSize:9, color:"#58C870", fontWeight:700 }}>
-            💚 {effectiveHeal(card, creature)} heal
-            {statMod(creature?.stats?.[card.scalingStat ?? 'wisdom'] ?? 10) !== 0 &&
-              <span style={{color:"#409050",fontWeight:400}}> ({card.healAmount}+{statMod(creature?.stats?.[card.scalingStat ?? 'wisdom'] ?? 10)})</span>}
-          </div>
-        )}
-        {card.onHitStatus && (
-          <div style={{ fontSize:9, color:"#E0A040", fontWeight:700 }}>
-            ✦ Inflicts {card.onHitStatus.stacks}× {card.onHitStatus.type}
-          </div>
-        )}
-        {card.onPlayStatus && (
-          <div style={{ fontSize:9, color:"#A0C8E0", fontWeight:700 }}>
-            ★ Grants {card.onPlayStatus.stacks}× {card.onPlayStatus.type}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverCard }) {
   const [tab, setTab] = useState("stats"); // stats | deck
@@ -319,7 +240,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
   if (!creature) return (
     <div style={{
       flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-      fontSize:9, color:"#302818", letterSpacing:"0.1em",
+      fontSize:13, color:"#806854", letterSpacing:"0.1em",
       fontFamily:"'Courier New', monospace",
     }}>
       SELECT A CREATURE
@@ -352,7 +273,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
             <div style={{ fontSize:14, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.03em" }}>
               {creature.name}
             </div>
-            <div style={{ fontSize:9, color:col.light, marginTop:2 }}>
+            <div style={{ fontSize:13, color:col.light, marginTop:2 }}>
               {creature.type.toUpperCase()} · Lv{creature.level} · {stage.toUpperCase()}
             </div>
           </div>
@@ -361,20 +282,20 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
         {/* HP + XP bars */}
         <div style={{ marginBottom:5 }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-            <span style={{ fontSize:8, fontWeight:900, color:"#38A018" }}>HP</span>
-            <span style={{ fontSize:8, color:"#605840" }}>{creature.currentHp}/{creature.maxHp}</span>
+            <span style={{ fontSize:12, fontWeight:900, color:"#38A018" }}>HP</span>
+            <span style={{ fontSize:12, color:"#B09870" }}>{creature.currentHp}/{creature.maxHp}</span>
           </div>
-          <div style={{ height:6, background:"#302818", borderRadius:3, overflow:"hidden" }}>
+          <div style={{ height:6, background:"#806854", borderRadius:3, overflow:"hidden" }}>
             <div style={{ height:"100%", width:`${pct}%`, background:hpColor(pct), borderRadius:3, transition:"width 0.3s" }} />
           </div>
         </div>
         {creature.xpNext && (
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
-              <span style={{ fontSize:7, color:"#4898F0" }}>XP</span>
-              <span style={{ fontSize:7, color:"#403828" }}>{creature.xp ?? 0}/{creature.xpNext}</span>
+              <span style={{ fontSize:11, color:"#4898F0" }}>XP</span>
+              <span style={{ fontSize:11, color:"#907858" }}>{creature.xp ?? 0}/{creature.xpNext}</span>
             </div>
-            <div style={{ height:3, background:"#302818", borderRadius:2, overflow:"hidden" }}>
+            <div style={{ height:3, background:"#806854", borderRadius:2, overflow:"hidden" }}>
               <div style={{
                 height:"100%",
                 width:`${Math.min(100, Math.round(((creature.xp ?? 0) / creature.xpNext) * 100))}%`,
@@ -390,9 +311,9 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
         {["stats","deck"].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             fontFamily:"'Courier New', monospace",
-            fontSize:9, fontWeight:900,
+            fontSize:13, fontWeight:900,
             padding:"7px 14px", background:"transparent",
-            color: tab === t ? "#E8E8D0" : "#504838",
+            color: tab === t ? "#E8E8D0" : "#A08868",
             border:"none",
             borderBottom: tab === t ? `2px solid ${col.mid}` : "2px solid transparent",
             cursor:"pointer", letterSpacing:"0.1em", textTransform:"uppercase",
@@ -419,12 +340,12 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
                     background:"#141410", border:"1px solid #252514",
                     borderRadius:5, padding:"6px 8px",
                   }}>
-                    <div style={{ fontSize:7, color:"#504838", letterSpacing:"0.08em", marginBottom:2 }}>
+                    <div style={{ fontSize:11, color:"#A08868", letterSpacing:"0.08em", marginBottom:2 }}>
                       {stat.toUpperCase().slice(0,3)}
                     </div>
                     <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
                       <span style={{ fontSize:14, fontWeight:900, color:"#E8E8D0" }}>{val}</span>
-                      <span style={{ fontSize:9, color: mod >= 0 ? "#40C850" : "#E84040", fontWeight:700 }}>
+                      <span style={{ fontSize:13, color: mod >= 0 ? "#40C850" : "#E84040", fontWeight:700 }}>
                         {mod >= 0 ? "+" : ""}{mod}
                       </span>
                     </div>
@@ -435,7 +356,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
                 background:"#141410", border:"1px solid #252514",
                 borderRadius:5, padding:"6px 8px",
               }}>
-                <div style={{ fontSize:7, color:"#504838", letterSpacing:"0.08em", marginBottom:2 }}>AC</div>
+                <div style={{ fontSize:11, color:"#A08868", letterSpacing:"0.08em", marginBottom:2 }}>AC</div>
                 <div style={{ fontSize:14, fontWeight:900, color:"#74BCFF" }}>{creature.armorClass}</div>
               </div>
             </div>
@@ -443,7 +364,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
             {/* Evolution path */}
             {def && (
               <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:7, color:"#403828", letterSpacing:"0.1em", marginBottom:6 }}>
+                <div style={{ fontSize:11, color:"#907858", letterSpacing:"0.1em", marginBottom:6 }}>
                   EVOLUTION PATH
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:6 }}>
@@ -455,20 +376,20 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
                       <>
                         {i > 0 && (
                           <div key={`arrow-${i}`} style={{
-                            fontSize:9,
-                            color: isPast || isCurrent ? col.mid : "#302818",
+                            fontSize:13,
+                            color: isPast || isCurrent ? col.mid : "#806854",
                           }}>→</div>
                         )}
                         <div key={s} style={{
                           background: isCurrent ? col.bg : "#141410",
-                          border:`1.5px solid ${isCurrent ? col.mid : isPast ? col.mid + "44" : "#252514"}`,
+                          border:`1.5px solid ${isCurrent ? col.mid : isPast ? col.mid + "44" : "#706040"}`,
                           borderRadius:5, padding:"4px 8px",
                           textAlign:"center",
                         }}>
-                          <div style={{ fontSize:8, fontWeight:900, color: isCurrent ? "#E8E8D0" : "#504838" }}>
+                          <div style={{ fontSize:12, fontWeight:900, color: isCurrent ? "#E8E8D0" : "#A08868" }}>
                             {stageDef.name}
                           </div>
-                          <div style={{ fontSize:7, color:"#403828" }}>
+                          <div style={{ fontSize:11, color:"#907858" }}>
                             Lv{s === "baby" ? "1" : s === "adult" ? "3" : "5"}
                           </div>
                         </div>
@@ -482,13 +403,13 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
             {/* Passive tags */}
             {def?.passiveTags?.length > 0 && (
               <div>
-                <div style={{ fontSize:7, color:"#403828", letterSpacing:"0.1em", marginBottom:6 }}>
+                <div style={{ fontSize:11, color:"#907858", letterSpacing:"0.1em", marginBottom:6 }}>
                   SYNERGY TAGS
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:4 }}>
                   {def.passiveTags.map(tag => (
                     <span key={tag} style={{
-                      fontSize:8, padding:"2px 7px",
+                      fontSize:12, padding:"2px 7px",
                       background: col.mid + "22", color:col.light,
                       border:`1px solid ${col.mid}44`,
                       borderRadius:3, letterSpacing:"0.06em",
@@ -503,11 +424,11 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
         {/* DECK TAB */}
         {tab === "deck" && (
           <div>
-            <div style={{ fontSize:7, color:"#403828", letterSpacing:"0.1em", marginBottom:8 }}>
+            <div style={{ fontSize:11, color:"#907858", letterSpacing:"0.1em", marginBottom:8 }}>
               DECK — {creature.deck.length} cards ({uniqueCards.length} unique)
             </div>
             {uniqueCards.length === 0 && (
-              <p style={{ fontSize:9, color:"#403828" }}>No cards in deck.</p>
+              <p style={{ fontSize:13, color:"#907858" }}>No cards in deck.</p>
             )}
             <style>{`
               @keyframes deckCardBob {
@@ -564,7 +485,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
                       position:"absolute", top:4, right:4,
                       width:16, height:16, borderRadius:"50%",
                       background: card.energyCost===0 ? "#C8C0A8" : cardCol.mid,
-                      color:"#fff", fontSize:9, fontWeight:900,
+                      color:"#fff", fontSize:11, fontWeight:900,
                       display:"flex", alignItems:"center", justifyContent:"center",
                       border:`1.5px solid ${cardCol.dark}`,
                       lineHeight:1,
@@ -576,7 +497,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
                         position:"absolute", top:4, left:4,
                         width:15, height:15, borderRadius:"50%",
                         background:"#302810", color:"#E8E8D0",
-                        fontSize:8, fontWeight:900,
+                        fontSize:12, fontWeight:900,
                         display:"flex", alignItems:"center", justifyContent:"center",
                         border:"1.5px solid #605840",
                       }}>×{count}</div>
@@ -598,7 +519,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
 
                     {/* Card name */}
                     <div style={{
-                      fontSize:7, fontWeight:900, color:"#302810",
+                      fontSize:8, fontWeight:900, color:"#302810",
                       textAlign:"center", lineHeight:1.2, marginBottom:3,
                       letterSpacing:"0.01em",
                     }}>
@@ -608,23 +529,23 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
                     {/* Badge */}
                     <div style={{ textAlign:"center", marginBottom:4 }}>
                       <span style={{
-                        fontSize:6, fontWeight:900, padding:"1px 4px", borderRadius:2,
+                        fontSize:7, fontWeight:900, padding:"1px 4px", borderRadius:2,
                         background: isAttack?"#F09030":isDefend?"#5878F0":"#58A838",
-                        color:"#fff", letterSpacing:"0.05em",
+                        color:"#fff", letterSpacing:"0.04em",
                       }}>
                         {isAttack?"ATK":isDefend?"DEF":"UTL"}
                       </span>
                     </div>
 
-                    {/* Description */}
+                    {/* Description — small hint, hover tooltip shows full text */}
                     <div style={{
-                      fontSize:6, color:"#605840", lineHeight:1.3,
+                      fontSize:7, color:"#A09070", lineHeight:1.25,
                       textAlign:"center",
                       borderTop:`1px solid ${cardCol.mid}33`,
                       paddingTop:3,
                       overflow:"hidden",
                       display:"-webkit-box",
-                      WebkitLineClamp:3,
+                      WebkitLineClamp:2,
                       WebkitBoxOrient:"vertical",
                     }}>
                       {liveDesc(card, creature)}
@@ -647,7 +568,7 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
           padding:"10px 14px",
           borderTop:"1px solid #252514",
         }}>
-          <div style={{ fontSize:8, color:"#403828", marginBottom:6, letterSpacing:"0.06em" }}>
+          <div style={{ fontSize:12, color:"#907858", marginBottom:6, letterSpacing:"0.06em" }}>
             MOVE TO POSITION
           </div>
           <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
@@ -657,8 +578,8 @@ function DetailPanel({ creature, partyIndex, onSwapOut, rosterCreature, onHoverC
                 onClick={() => onSwapOut(partyIndex, i)}
                 style={{
                   fontFamily:"'Courier New', monospace",
-                  fontSize:8, fontWeight:900,
-                  background:"#252514", color:"#807860",
+                  fontSize:12, fontWeight:900,
+                  background:"#706040", color:"#807860",
                   border:"1.5px solid #302818", borderRadius:4,
                   padding:"3px 8px", cursor:"pointer",
                   letterSpacing:"0.06em",
@@ -772,7 +693,7 @@ export default function PartyScreen({ onClose }) {
           <span style={{ fontSize:14, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.08em" }}>
             PARTY
           </span>
-          <span style={{ fontSize:9, color:"#504838", marginLeft:12, letterSpacing:"0.06em" }}>
+          <span style={{ fontSize:13, color:"#A08868", marginLeft:12, letterSpacing:"0.06em" }}>
             {party.length}/6 · Drag slots to reorder · First 2 fight
           </span>
         </div>
@@ -781,7 +702,7 @@ export default function PartyScreen({ onClose }) {
           style={{
             fontFamily:"'Courier New', monospace",
             fontSize:11, fontWeight:900,
-            background:"#252514", color:"#807860",
+            background:"#706040", color:"#807860",
             border:"2px solid #302818", borderRadius:5,
             padding:"5px 14px", cursor:"pointer", letterSpacing:"0.08em",
           }}
@@ -805,7 +726,7 @@ export default function PartyScreen({ onClose }) {
         }}>
 
           {/* Active label */}
-          <div style={{ fontSize:7, color:"#E84040", letterSpacing:"0.12em", fontWeight:900 }}>
+          <div style={{ fontSize:11, color:"#E84040", letterSpacing:"0.12em", fontWeight:900 }}>
             ▸ ACTIVE IN COMBAT (slots 1–2)
           </div>
 
@@ -829,7 +750,7 @@ export default function PartyScreen({ onClose }) {
           ))}
 
           {/* Bench label */}
-          <div style={{ fontSize:7, color:"#504838", letterSpacing:"0.12em", fontWeight:900, marginTop:4 }}>
+          <div style={{ fontSize:11, color:"#A08868", letterSpacing:"0.12em", fontWeight:900, marginTop:4 }}>
             ▸ BENCH (slots 3–6)
           </div>
 
@@ -858,7 +779,7 @@ export default function PartyScreen({ onClose }) {
               onClick={() => handleRemoveFromParty(selection.index)}
               style={{
                 fontFamily:"'Courier New', monospace",
-                fontSize:9, fontWeight:900,
+                fontSize:13, fontWeight:900,
                 background:"transparent", color:"#803030",
                 border:"1.5px solid #802020", borderRadius:5,
                 padding:"5px", cursor:"pointer", letterSpacing:"0.08em",
@@ -872,7 +793,7 @@ export default function PartyScreen({ onClose }) {
           {/* Roster section */}
           {rosterOnly.length > 0 && (
             <>
-              <div style={{ fontSize:7, color:"#504838", letterSpacing:"0.12em", fontWeight:900, marginTop:8 }}>
+              <div style={{ fontSize:11, color:"#A08868", letterSpacing:"0.12em", fontWeight:900, marginTop:8 }}>
                 ▸ ROSTER — NOT IN PARTY ({rosterOnly.length})
               </div>
               {rosterOnly.map(c => (

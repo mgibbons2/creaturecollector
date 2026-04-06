@@ -15,17 +15,17 @@ function StatBar({ label, value, max = 20 }) {
   const pct = (value / max) * 100;
   return (
     <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:3 }}>
-      <span style={{ fontSize:8, fontWeight:900, color:"#807860", minWidth:28, letterSpacing:"0.06em" }}>
+      <span style={{ fontSize:12, fontWeight:900, color:"#807860", minWidth:28, letterSpacing:"0.06em" }}>
         {label}
       </span>
-      <div style={{ flex:1, height:5, background:"#302818", borderRadius:3, overflow:"hidden" }}>
+      <div style={{ flex:1, height:5, background:"#806854", borderRadius:3, overflow:"hidden" }}>
         <div style={{
           height:"100%", width:`${pct}%`,
           background:"#A89050", borderRadius:3,
           transition:"width 0.3s ease",
         }} />
       </div>
-      <span style={{ fontSize:8, color:"#605840", minWidth:16, textAlign:"right" }}>{value}</span>
+      <span style={{ fontSize:12, color:"#B09870", minWidth:16, textAlign:"right" }}>{value}</span>
     </div>
   );
 }
@@ -39,7 +39,7 @@ function StarterCard({ def, isSelected, onClick }) {
       onClick={onClick}
       style={{
         background: isSelected ? col.bg : "#1a1a10",
-        border:`3px solid ${isSelected ? col.mid : "#302818"}`,
+        border:`3px solid ${isSelected ? col.mid : "#806854"}`,
         borderRadius:10,
         padding:"16px 14px",
         cursor:"pointer",
@@ -54,13 +54,13 @@ function StarterCard({ def, isSelected, onClick }) {
       {/* Type badge */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <span style={{
-          fontSize:8, fontWeight:900, padding:"2px 7px",
+          fontSize:12, fontWeight:900, padding:"2px 7px",
           background: col.mid + "33", color: col.light,
           border:`1px solid ${col.mid}55`,
           borderRadius:3, letterSpacing:"0.1em", textTransform:"uppercase",
         }}>{def.type}</span>
         {isSelected && (
-          <span style={{ fontSize:9, color: col.light, fontWeight:900 }}>★ PICK</span>
+          <span style={{ fontSize:13, color: col.light, fontWeight:900 }}>★ PICK</span>
         )}
       </div>
 
@@ -90,7 +90,7 @@ function StarterCard({ def, isSelected, onClick }) {
         {baby.name.toUpperCase()}
       </div>
       <div style={{
-        fontSize:8, color:"#605840", textAlign:"center",
+        fontSize:12, color:"#B09870", textAlign:"center",
         letterSpacing:"0.08em", marginBottom:10,
       }}>
         Lv 1 · Baby
@@ -108,7 +108,7 @@ function StarterCard({ def, isSelected, onClick }) {
       {/* HP + AC */}
       <div style={{
         display:"flex", justifyContent:"space-between", marginTop:8,
-        fontSize:9, color:"#807860",
+        fontSize:13, color:"#807860",
       }}>
         <span>HP <b style={{ color:"#A8D070" }}>{def.baseHp}</b></span>
         <span>AC <b style={{ color:"#74BCFF" }}>{baby.armorClass}</b></span>
@@ -135,7 +135,7 @@ function PreviewPanel({ def }) {
       </div>
       <div style={{ fontSize:15, fontWeight:900, color:"#E8E8D0", marginBottom:4 }}>
         {baby.name}
-        <span style={{ fontSize:10, color:"#605840", fontWeight:400, marginLeft:8 }}>
+        <span style={{ fontSize:10, color:"#B09870", fontWeight:400, marginLeft:8 }}>
           → {def.stages.adult.name} → {def.stages.elder.name}
         </span>
       </div>
@@ -147,7 +147,7 @@ function PreviewPanel({ def }) {
       <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:12 }}>
         {def.passiveTags.map(t => (
           <span key={t} style={{
-            fontSize:8, fontWeight:900, padding:"1px 6px",
+            fontSize:12, fontWeight:900, padding:"1px 6px",
             background: col.mid + "22", color: col.light,
             border:`1px solid ${col.mid}44`,
             borderRadius:3, letterSpacing:"0.08em", textTransform:"uppercase",
@@ -156,7 +156,7 @@ function PreviewPanel({ def }) {
       </div>
 
       {/* Starter deck preview */}
-      <div style={{ fontSize:9, color:"#504838", letterSpacing:"0.08em", marginBottom:6 }}>
+      <div style={{ fontSize:13, color:"#A08868", letterSpacing:"0.08em", marginBottom:6 }}>
         STARTER DECK ({def.starterDeck.length} cards)
       </div>
       <div style={{
@@ -165,8 +165,8 @@ function PreviewPanel({ def }) {
       }}>
         {[...new Set(def.starterDeck)].map(cardId => (
           <span key={cardId} style={{
-            fontSize:8, padding:"2px 6px",
-            background:"#252514", border:"1px solid #303020",
+            fontSize:12, padding:"2px 6px",
+            background:"#706040", border:"1px solid #303020",
             borderRadius:3, color:"#A09070",
             textTransform:"capitalize",
           }}>
@@ -202,7 +202,7 @@ export default function StarterPickScreen() {
       {/* Header */}
       <div style={{ textAlign:"center", marginBottom:32, width:"100%" }}>
         <div style={{
-          fontSize:10, color:"#504838", letterSpacing:"0.25em",
+          fontSize:10, color:"#A08868", letterSpacing:"0.06em",
           textTransform:"uppercase", marginBottom:8,
         }}>
           Step 1 of 1
@@ -213,7 +213,7 @@ export default function StarterPickScreen() {
         }}>
           CHOOSE YOUR STARTER
         </h2>
-        <p style={{ fontSize:10, color:"#605840", marginTop:6, letterSpacing:"0.06em" }}>
+        <p style={{ fontSize:10, color:"#B09870", marginTop:6, letterSpacing:"0.06em" }}>
           This creature begins your journey. Others can be caught along the way.
         </p>
       </div>
@@ -260,7 +260,7 @@ export default function StarterPickScreen() {
           onClick={() => dispatch(RunActions.returnToTitle())}
           style={{
             background:"transparent", border:"none",
-            color:"#403828", fontSize:10, cursor:"pointer",
+            color:"#907858", fontSize:10, cursor:"pointer",
             fontFamily:"'Courier New', monospace",
             letterSpacing:"0.1em", textDecoration:"underline",
           }}

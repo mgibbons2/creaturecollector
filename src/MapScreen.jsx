@@ -15,7 +15,7 @@ import { TYPE_COLORS } from "./shared.js";
 // ─── CONSTANTS ───────────────────────────────────────────────
 
 const NODE_META = {
-  [NodeType.START]:  { icon:"★", label:"Start",  bg:"#252514", border:"#504830", color:"#A09050" },
+  [NodeType.START]:  { icon:"★", label:"Start",  bg:"#706040", border:"#504830", color:"#A09050" },
   [NodeType.COMBAT]: { icon:"⚔", label:"Battle", bg:"#1e0e0e", border:"#882020", color:"#E84040" },
   [NodeType.ELITE]:  { icon:"☠", label:"Elite",  bg:"#200a20", border:"#882088", color:"#D060E0" },
   [NodeType.BOSS]:   { icon:"✦", label:"Boss",   bg:"#1e1000", border:"#C88020", color:"#F8C030" },
@@ -38,7 +38,7 @@ function MapNode({ node, isCurrent, isReachable, isCleared, onClick }) {
         width:  size, height: size,
         borderRadius: "50%",
         background: isCleared ? "#1a1a14" : meta.bg,
-        border: `3px solid ${isCurrent ? "#E8E8D0" : isReachable ? meta.color : isCleared ? "#302818" : meta.border}`,
+        border: `3px solid ${isCurrent ? "#E8E8D0" : isReachable ? meta.color : isCleared ? "#806854" : meta.border}`,
         display:"flex", alignItems:"center", justifyContent:"center",
         cursor: isReachable ? "pointer" : "default",
         opacity: isCleared ? 0.4 : 1,
@@ -57,7 +57,7 @@ function MapNode({ node, isCurrent, isReachable, isCleared, onClick }) {
     >
       <span style={{
         fontSize: node.type === NodeType.BOSS ? 20 : 15,
-        color: isCleared ? "#403828" : isCurrent ? "#E8E8D0" : meta.color,
+        color: isCleared ? "#907858" : isCurrent ? "#E8E8D0" : meta.color,
         lineHeight:1,
         userSelect:"none",
       }}>
@@ -67,7 +67,7 @@ function MapNode({ node, isCurrent, isReachable, isCleared, onClick }) {
       <div style={{
         position:"absolute", top:"calc(100% + 4px)",
         left:"50%", transform:"translateX(-50%)",
-        fontSize:7, fontWeight:900, color: isCleared ? "#302818" : meta.color,
+        fontSize:11, fontWeight:900, color: isCleared ? "#806854" : meta.color,
         letterSpacing:"0.08em", whiteSpace:"nowrap",
       }}>
         {meta.label.toUpperCase()}
@@ -100,7 +100,7 @@ function ConnectorLines({ nodes, nodePositions, clearedIds }) {
           key={l.key}
           x1={l.from.x} y1={l.from.y}
           x2={l.to.x}   y2={l.to.y}
-          stroke={l.cleared ? "#302818" : "#504838"}
+          stroke={l.cleared ? "#806854" : "#A08868"}
           strokeWidth={l.cleared ? 1 : 1.5}
           strokeDasharray={l.cleared ? "4 4" : "none"}
           opacity={l.cleared ? 0.4 : 0.7}
@@ -129,19 +129,19 @@ function PartyBar({ party }) {
           }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
               <span style={{ fontSize:10, fontWeight:900, color:"#E8E8D0" }}>{c.name}</span>
-              <span style={{ fontSize:9, color:typeCol }}>Lv{c.level}</span>
+              <span style={{ fontSize:13, color:typeCol }}>Lv{c.level}</span>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-              <span style={{ fontSize:8, fontWeight:900, color:"#38A018", minWidth:14 }}>HP</span>
-              <div style={{ flex:1, height:6, background:"#302818", borderRadius:3, overflow:"auto" }}>
+              <span style={{ fontSize:12, fontWeight:900, color:"#38A018", minWidth:14 }}>HP</span>
+              <div style={{ flex:1, height:6, background:"#806854", borderRadius:3, overflow:"auto" }}>
                 <div style={{ height:"100%", width:`${pct}%`, background:hpCol, borderRadius:3, transition:"width 0.3s" }} />
               </div>
-              <span style={{ fontSize:8, color:"#605840" }}>{c.currentHp}/{c.maxHp}</span>
+              <span style={{ fontSize:12, color:"#B09870" }}>{c.currentHp}/{c.maxHp}</span>
             </div>
             {/* XP bar */}
             {c.xpNext && (
               <div style={{ marginTop:3 }}>
-                <div style={{ height:2, background:"#302818", borderRadius:1, overflow:"hidden" }}>
+                <div style={{ height:2, background:"#806854", borderRadius:1, overflow:"hidden" }}>
                   <div style={{ height:"100%", width:`${Math.min(100,(c.xp/c.xpNext)*100)}%`, background:"#4898F0" }} />
                 </div>
               </div>
@@ -278,7 +278,7 @@ export default function MapScreen() {
             ¥ {gold}
           </span>
           {relics.length > 0 && (
-            <span style={{ fontSize:9, color:"#C89010" }}>
+            <span style={{ fontSize:13, color:"#C89010" }}>
               RELICS: {relics.length}
             </span>
           )}
@@ -287,7 +287,7 @@ export default function MapScreen() {
             style={{
               fontFamily:"'Courier New', monospace",
               fontSize:10, fontWeight:900,
-              background:"#252514", color:"#E8E8D0",
+              background:"#706040", color:"#E8E8D0",
               border:"2px solid #504838", borderRadius:5,
               padding:"5px 14px", cursor:"pointer",
               letterSpacing:"0.08em",
@@ -360,7 +360,7 @@ export default function MapScreen() {
               background:"#1a1a10", border:"2px solid #302818",
               borderRadius:8, padding:"12px",
             }}>
-              <div style={{ fontSize:9, color:"#504838", letterSpacing:"0.1em", marginBottom:6 }}>
+              <div style={{ fontSize:13, color:"#A08868", letterSpacing:"0.1em", marginBottom:6 }}>
                 CURRENT NODE
               </div>
               <div style={{
@@ -376,7 +376,7 @@ export default function MapScreen() {
                   <div style={{ fontSize:12, fontWeight:900, color:"#E8E8D0" }}>
                     {(NODE_META[pendingNode.type] || NODE_META[NodeType.COMBAT]).label}
                   </div>
-                  <div style={{ fontSize:8, color:"#504838" }}>
+                  <div style={{ fontSize:12, color:"#A08868" }}>
                     {map.clearedNodeIds.includes(pendingNode.id) ? "Cleared" : "Not yet entered"}
                   </div>
                 </div>
@@ -410,7 +410,7 @@ export default function MapScreen() {
 
           {/* Node legend */}
           <div>
-            <div style={{ fontSize:8, color:"#403828", letterSpacing:"0.1em", marginBottom:8 }}>
+            <div style={{ fontSize:12, color:"#907858", letterSpacing:"0.1em", marginBottom:8 }}>
               LEGEND
             </div>
             {Object.entries(NODE_META).filter(([t]) => t !== NodeType.START).map(([type, meta]) => (
@@ -418,14 +418,14 @@ export default function MapScreen() {
                 display:"flex", alignItems:"center", gap:6, marginBottom:4,
               }}>
                 <span style={{ fontSize:12, color:meta.color, minWidth:16 }}>{meta.icon}</span>
-                <span style={{ fontSize:9, color:"#605840" }}>{meta.label}</span>
+                <span style={{ fontSize:13, color:"#B09870" }}>{meta.label}</span>
               </div>
             ))}
           </div>
 
           {/* Party */}
           <div>
-            <div style={{ fontSize:8, color:"#403828", letterSpacing:"0.1em", marginBottom:8 }}>
+            <div style={{ fontSize:12, color:"#907858", letterSpacing:"0.1em", marginBottom:8 }}>
               PARTY
             </div>
             <PartyBar party={party} />

@@ -330,7 +330,7 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
           {/* Level badge */}
           <span style={{
             fontSize: 10, fontWeight: 700,
-            color: isEnemy ? "#807860" : "#605840",
+            color: isEnemy ? "#807860" : "#B09870",
           }}>Lv{creature.level}</span>
         </div>
       </div>
@@ -359,7 +359,7 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
                 animation:"statusPop 0.3s ease-out",
               }}>
                 <span style={{fontSize:12, lineHeight:1}}>{m.icon}</span>
-                <span style={{fontSize:8, fontWeight:900, lineHeight:1}}>×{e.stacks}</span>
+                <span style={{fontSize:12, fontWeight:900, lineHeight:1}}>×{e.stacks}</span>
               </span>
             </Tip>
           );
@@ -370,7 +370,7 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
       <div style={{ marginBottom:3 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:3 }}>
           <span style={{
-            fontSize:8, fontWeight:900,
+            fontSize:12, fontWeight:900,
             color: isEnemy ? "#807860" : "#505040",
             letterSpacing:"0.1em",
           }}>HP</span>
@@ -379,7 +379,7 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
             color: isEnemy ? "#E8E8D0" : "#2A1E08",
           }}>
             {creature.currentHp}
-            <span style={{ fontSize:9, fontWeight:500, color: isEnemy ? "#605840" : "#907860" }}>
+            <span style={{ fontSize:13, fontWeight:500, color: isEnemy ? "#B09870" : "#907860" }}>
               /{creature.maxHp}
             </span>
           </span>
@@ -387,7 +387,7 @@ function HPPanel({ creature, isEnemy, showXP = false, slot = null }) {
         <div style={{
           height:8, background: isEnemy ? "#0A0A06" : "#C8C0A0",
           borderRadius:4, overflow:"hidden",
-          border:`1px solid ${isEnemy ? "#302818" : "#A09878"}`,
+          border:`1px solid ${isEnemy ? "#806854" : "#A09878"}`,
           animation: hitFlash ? "hpFlash 0.35s ease" : "none",
         }}>
           <div style={{
@@ -519,7 +519,7 @@ function BattleSlot({ slot, isEnemy, isTargeted, isGlowing, onClick }) {
           top: isEnemy ? -22 : "auto",
           bottom: isEnemy ? "auto" : -22,
           left:"50%", transform:"translateX(-50%)",
-          fontSize:9, fontWeight:900,
+          fontSize:13, fontWeight:900,
           color: col.light,
           background: col.dark,
           border:`2px solid ${col.mid}`,
@@ -561,11 +561,11 @@ function FoeBenchList({ bench }) {
       minWidth:52,
     }}>
       <span style={{
-        fontSize:7, fontWeight:900, color:"#605840",
+        fontSize:11, fontWeight:900, color:"#B09870",
         letterSpacing:"0.12em", textAlign:"center", marginBottom:1,
       }}>FOE</span>
       {bench.length === 0 && (
-        <span style={{ fontSize:8, color:"#C0B898", fontStyle:"italic", textAlign:"center" }}>—</span>
+        <span style={{ fontSize:12, color:"#C0B898", fontStyle:"italic", textAlign:"center" }}>—</span>
       )}
       {bench.map((c, i) => {
         const col = TYPE_COLORS[c.type] || TYPE_COLORS.colorless;
@@ -585,7 +585,7 @@ function FoeBenchList({ bench }) {
             {/* Name + HP bar stacked */}
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{
-                fontSize:7.5, fontWeight:900, color:"#302810",
+                fontSize:11, fontWeight:900, color:"#302810",
                 whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
               }}>{c.name}</div>
               <div style={{
@@ -617,12 +617,12 @@ function PlayerBenchBar({ bench }) {
       borderRadius:6, padding:"5px 8px",
       backdropFilter:"blur(2px)",
     }}>
-      <span style={{ fontSize:7, fontWeight:900, color:"#605840", letterSpacing:"0.12em", textAlign:"center" }}>
+      <span style={{ fontSize:11, fontWeight:900, color:"#B09870", letterSpacing:"0.12em", textAlign:"center" }}>
         PARTY
       </span>
       <div style={{ display:"flex", gap:4 }}>
         {bench.length === 0 && (
-          <span style={{ fontSize:9, color:"#C0B898", fontStyle:"italic" }}>—</span>
+          <span style={{ fontSize:13, color:"#C0B898", fontStyle:"italic" }}>—</span>
         )}
         {bench.map((c, i) => {
           const col = TYPE_COLORS[c.type] || TYPE_COLORS.colorless;
@@ -637,13 +637,13 @@ function PlayerBenchBar({ bench }) {
               <svg width={14} height={14} viewBox="0 0 100 100">
                 <path d={TYPE_SHAPES[c.type]} fill={col.mid} />
               </svg>
-              <span style={{ fontSize:7.5, fontWeight:900, color:"#302810", lineHeight:1, textAlign:"center" }}>
+              <span style={{ fontSize:11, fontWeight:900, color:"#302810", lineHeight:1, textAlign:"center" }}>
                 {c.name.slice(0,6)}
               </span>
               <div style={{ width:32, height:3, background:"#685840", borderRadius:2, overflow:"hidden" }}>
                 <div style={{ height:"100%", width:`${pct}%`, background:hpBarColor(pct), borderRadius:2 }} />
               </div>
-              <span style={{ fontSize:7, color:"#807860" }}>Lv{c.level}</span>
+              <span style={{ fontSize:11, color:"#807860" }}>Lv{c.level}</span>
             </div>
           );
         })}
@@ -683,7 +683,7 @@ function CardFace({ card, col, isSelected, isDragging, effectiveCost }) {
             width:16, height:16, borderRadius:"50%",
             background: ec === 0 ? "#E8E0C8" : discounted ? "#2B7FE8" : col.mid,
             color: ec === 0 ? "#807860" : "#fff",
-            fontSize:9, fontWeight:900,
+            fontSize:11, fontWeight:900,
             display:"flex", alignItems:"center", justifyContent:"center",
             border:`2.5px solid ${ec === 0 ? "#B0A880" : discounted ? "#0E3577" : col.dark}`,
             boxShadow: discounted ? "0 0 6px #2B7FE888" : "0 1px 4px rgba(0,0,0,0.2)",
@@ -706,12 +706,13 @@ function CardFace({ card, col, isSelected, isDragging, effectiveCost }) {
       {/* Badge */}
       <div style={{ textAlign:"center", marginBottom:5 }}>
         <span style={{
-          fontSize:7, fontWeight:900, padding:"1px 4px", borderRadius:3, letterSpacing:"0.05em",
+          fontSize:7, fontWeight:900, padding:"1px 3px", borderRadius:3, letterSpacing:"0.04em",
           background: isAttack ? "#F09030" : isDefend ? "#5878F0" : "#58A838", color:"#fff",
         }}>{isAttack ? "ATK" : isDefend ? "DEF" : "UTL"}</span>
       </div>
-      {/* Desc */}
-      <div style={{ fontSize:7, color:"#605840", lineHeight:1.3, textAlign:"center", borderTop:"1px solid #E0D8B8", paddingTop:3 }}>
+      {/* Desc — hover card for full text */}
+      <div style={{ fontSize:6, color:"#A09070", lineHeight:1.25, textAlign:"center", borderTop:"1px solid #E0D8B8", paddingTop:2,
+        overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>
         {card.description}
       </div>
     </div>
@@ -857,12 +858,12 @@ function RelicBar({ relicIds }) {
       marginBottom:8,
       fontFamily:"'Courier New', monospace",
     }}>
-      <span style={{ fontSize:7, fontWeight:900, color:"#605840", letterSpacing:"0.1em", alignSelf:"center" }}>
+      <span style={{ fontSize:11, fontWeight:900, color:"#B09870", letterSpacing:"0.1em", alignSelf:"center" }}>
         RELICS
       </span>
       {relicIds.map(id => (
         <span key={id} style={{
-          fontSize:8, fontWeight:900,
+          fontSize:12, fontWeight:900,
           background:"#C8C0A0", color:"#302810",
           border:"1.5px solid #A09070",
           borderRadius:3, padding:"1px 6px",
@@ -960,8 +961,8 @@ function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onE
           if (isTurn) {
             return (
               <div key={globalIdx} style={{
-                fontSize:8, color: age === 0 ? "#8A7A50" : "#4A3E28",
-                letterSpacing:"0.2em", textAlign:"center",
+                fontSize:12, color: age === 0 ? "#8A7A50" : "#4A3E28",
+                letterSpacing:"0.05em", textAlign:"center",
                 padding:"1px 0 2px",
                 opacity: Math.max(0.2, 1 - age * 0.25),
                 fontFamily:"'Courier New', monospace",
@@ -1055,7 +1056,7 @@ function BattleTextBox({ log, selectedCard, targetingMode, onPlay, onCancel, onE
 
         {/* Energy orbs */}
         <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:5 }}>
-          <span style={{ fontSize:9, fontWeight:900, color:"#605840", letterSpacing:"0.08em" }}>
+          <span style={{ fontSize:13, fontWeight:900, color:"#B09870", letterSpacing:"0.08em" }}>
             ENERGY
           </span>
           {Array.from({ length:maxEnergy }).map((_, i) => (
@@ -1920,7 +1921,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
                     minWidth: isMobile ? 0 : 220,
                   }}>
                     <div style={{
-                      fontSize:8, fontWeight:900, color:"#807860",
+                      fontSize:12, fontWeight:900, color:"#807860",
                       letterSpacing:"0.08em", marginBottom:5,
                       display:"flex", alignItems:"center", gap:5,
                     }}>
@@ -1943,7 +1944,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
                         <div style={{
                           width:58, height:78, border:"2px dashed #C8C0A0",
                           borderRadius:6, display:"flex", alignItems:"center",
-                          justifyContent:"center", fontSize:8, color:"#C8C0A0",
+                          justifyContent:"center", fontSize:12, color:"#C8C0A0",
                           flexShrink:0,
                         }}>EMPTY</div>
                       ) : slot.hand.map((cardId, ci) => {
@@ -2114,14 +2115,14 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
           >
             {/* Scaled-up card face — 2× the compact size */}
             <div style={{
-              width: 120, height: 190,
+              width: 120,
               background: "#FFFEF5",
               border: `3px solid ${isPlayable ? col.mid : "#C8C0A0"}`,
               borderRadius: 10,
               padding: "10px 10px 9px",
               boxShadow: `0 20px 50px rgba(0,0,0,0.6), 0 4px 0 ${col.dark}`,
               opacity: isPlayable ? 1 : 0.7,
-              overflow: "hidden",
+              overflow: "visible",
               boxSizing: "border-box",
             }}>
               {/* Energy pip */}
@@ -2134,21 +2135,21 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
                 border:`3px solid ${col.dark}`,
               }}>{ec}</div>
               {/* Type stripe */}
-              <div style={{ height:5, borderRadius:3, marginBottom:8, background:`linear-gradient(to right,${col.light},${col.mid})` }} />
+              <div style={{ height:4, borderRadius:3, marginBottom:6, background:`linear-gradient(to right,${col.light},${col.mid})` }} />
               {/* Silhouette */}
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}>
-                <svg width={40} height={40} viewBox="0 0 100 100">
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:4 }}>
+                <svg width={36} height={36} viewBox="0 0 100 100">
                   <path d={TYPE_SHAPES[card.type]||TYPE_SHAPES.colorless} fill={col.mid} opacity={0.7}/>
                 </svg>
               </div>
               {/* Name */}
-              <div style={{ fontSize:11, fontWeight:900, color:"#302810", textAlign:"center", lineHeight:1.2, marginBottom:5, letterSpacing:"0.02em" }}>
+              <div style={{ fontSize:13, fontWeight:900, color:"#201808", textAlign:"center", lineHeight:1.2, marginBottom:3, letterSpacing:"0.02em" }}>
                 {card.name.toUpperCase()}
               </div>
               {/* Badge */}
               <div style={{ textAlign:"center", marginBottom:6 }}>
                 <span style={{
-                  fontSize:9, fontWeight:900, padding:"2px 7px", borderRadius:4,
+                  fontSize:13, fontWeight:900, padding:"2px 7px", borderRadius:4,
                   background: card.tags.includes("attack")?"#F09030":card.tags.includes("defend")?"#5878F0":"#58A838",
                   color:"#fff", letterSpacing:"0.07em",
                 }}>
@@ -2156,26 +2157,26 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
                 </span>
               </div>
               {/* Description */}
-              <div style={{ fontSize:9, color:"#504830", lineHeight:1.4, textAlign:"center", borderTop:`1px solid ${col.mid}33`, paddingTop:5, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:4, WebkitBoxOrient:"vertical" }}>
+              <div style={{ fontSize:12, color:"#504830", lineHeight:1.4, textAlign:"center", borderTop:`1px solid ${col.mid}33`, paddingTop:4, overflow:"hidden", display:"-webkit-box", WebkitLineClamp:3, WebkitBoxOrient:"vertical" }}>
                 {liveDesc(card, slot?.creature)}
               </div>
               {/* Stat lines — show effective (stat-scaled) values */}
               {card.baseDamage > 0 && (
-                <div style={{ fontSize:9, color:"#F08050", fontWeight:700, marginTop:3 }}>
+                <div style={{ fontSize:13, color:"#F08050", fontWeight:700, marginTop:3 }}>
                   ⚔ {effectiveDamage(card, slot?.creature)} dmg
                   {statMod(slot?.creature?.stats?.[card.scalingStat ?? 'strength'] ?? 10) !== 0 &&
                     <span style={{color:"#C07040",fontWeight:400}}> ({card.baseDamage}+{statMod(slot?.creature?.stats?.[card.scalingStat ?? 'strength'] ?? 10)})</span>}
                 </div>
               )}
               {card.shieldAmount > 0 && (
-                <div style={{ fontSize:9, color:"#5898F0", fontWeight:700, marginTop:2 }}>
+                <div style={{ fontSize:13, color:"#5898F0", fontWeight:700, marginTop:2 }}>
                   🛡 {effectiveShield(card, slot?.creature)} shield
                   {statMod(slot?.creature?.stats?.[card.scalingStat ?? 'constitution'] ?? 10) !== 0 &&
                     <span style={{color:"#4070C0",fontWeight:400}}> ({card.shieldAmount}+{statMod(slot?.creature?.stats?.[card.scalingStat ?? 'constitution'] ?? 10)})</span>}
                 </div>
               )}
               {card.healAmount > 0 && (
-                <div style={{ fontSize:9, color:"#58C870", fontWeight:700, marginTop:2 }}>
+                <div style={{ fontSize:13, color:"#58C870", fontWeight:700, marginTop:2 }}>
                   💚 {effectiveHeal(card, slot?.creature)} heal
                   {statMod(slot?.creature?.stats?.[card.scalingStat ?? 'wisdom'] ?? 10) !== 0 &&
                     <span style={{color:"#409050",fontWeight:400}}> ({card.healAmount}+{statMod(slot?.creature?.stats?.[card.scalingStat ?? 'wisdom'] ?? 10)})</span>}
@@ -2183,7 +2184,7 @@ export default function CombatUI({ initialState, relics = [], onVictory, onDefea
               )}
               {/* Not playable reason */}
               {!isPlayable && isPlayerTurn && (
-                <div style={{ marginTop:5, fontSize:8, color:"#C04030", textAlign:"center", fontWeight:900 }}>
+                <div style={{ marginTop:5, fontSize:12, color:"#C04030", textAlign:"center", fontWeight:900 }}>
                   {ec > state.sharedEnergy ? "NOT ENOUGH ENERGY" : slot?.stunned ? "STUNNED" : ""}
                 </div>
               )}

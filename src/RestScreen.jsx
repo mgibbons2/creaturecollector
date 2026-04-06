@@ -39,14 +39,14 @@ function HPBar({ current, max, type }) {
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-        <span style={{ fontSize:8, fontWeight:900, color:"#38A018" }}>HP</span>
-        <span style={{ fontSize:8, color:"#605840" }}>{current}/{max}</span>
+        <span style={{ fontSize:12, fontWeight:900, color:"#38A018" }}>HP</span>
+        <span style={{ fontSize:12, color:"#B09870" }}>{current}/{max}</span>
       </div>
-      <div style={{ height:6, background:"#302818", borderRadius:3, overflow:"hidden" }}>
+      <div style={{ height:6, background:"#806854", borderRadius:3, overflow:"hidden" }}>
         <div style={{ height:"100%", width:`${pct}%`, background:hpCol, borderRadius:3, transition:"width 0.4s" }} />
       </div>
       <div style={{ marginTop:3 }}>
-        <div style={{ height:2, background:"#302818", borderRadius:1, overflow:"hidden" }}>
+        <div style={{ height:2, background:"#806854", borderRadius:1, overflow:"hidden" }}>
           <div style={{
             height:"100%",
             width:`${Math.min(100, ((current + Math.floor(max * 0.25)) / max) * 100)}%`,
@@ -72,19 +72,19 @@ function PartyCard({ creature, showHealPreview }) {
     }}>
       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
         <span style={{ fontSize:11, fontWeight:900, color:"#E8E8D0" }}>{creature.name}</span>
-        <span style={{ fontSize:9, color:col.light }}>Lv{creature.level}</span>
+        <span style={{ fontSize:13, color:col.light }}>Lv{creature.level}</span>
       </div>
       <HPBar current={creature.currentHp} max={creature.maxHp} type={creature.type} />
       {showHealPreview && creature.currentHp < creature.maxHp && (
         <div style={{
-          marginTop:5, fontSize:8,
+          marginTop:5, fontSize:12,
           color: "#40C850", fontWeight:900, letterSpacing:"0.06em",
         }}>
           +{newHp - creature.currentHp} HP
         </div>
       )}
       {showHealPreview && creature.currentHp >= creature.maxHp && (
-        <div style={{ marginTop:5, fontSize:8, color:"#403828" }}>
+        <div style={{ marginTop:5, fontSize:12, color:"#907858" }}>
           Already full
         </div>
       )}
@@ -104,7 +104,7 @@ function UpgradeCardTile({ cardId, creature, isSelected, onClick }) {
       style={{
         width:110, flexShrink:0,
         background: isSelected ? col.bg : "#1a1a10",
-        border:`2px solid ${isSelected ? col.mid : "#302818"}`,
+        border:`2px solid ${isSelected ? col.mid : "#806854"}`,
         borderRadius:8, padding:"10px 9px",
         cursor:"pointer",
         transform: isSelected ? "translateY(-8px) scale(1.04)" : "none",
@@ -121,18 +121,18 @@ function UpgradeCardTile({ cardId, creature, isSelected, onClick }) {
         </svg>
       </div>
 
-      <div style={{ fontSize:9, fontWeight:900, color:"#E8E8D0", textAlign:"center", marginBottom:5, lineHeight:1.2 }}>
+      <div style={{ fontSize:13, fontWeight:900, color:"#E8E8D0", textAlign:"center", marginBottom:5, lineHeight:1.2 }}>
         {baseDef.name.toUpperCase()}
       </div>
 
       {/* Before → After */}
       <div style={{
         borderTop:"1px solid #252514", paddingTop:6,
-        fontSize:7.5, lineHeight:1.6,
+        fontSize:11, lineHeight:1.6,
       }}>
         {baseDef.baseDamage !== undefined && (
           <div>
-            <span style={{ color:"#605840" }}>DMG </span>
+            <span style={{ color:"#B09870" }}>DMG </span>
             <span style={{ color:"#E85840" }}>{baseDef.baseDamage}</span>
             <span style={{ color:"#505040" }}> → </span>
             <span style={{ color:"#40C850", fontWeight:900 }}>{upgraded.baseDamage}</span>
@@ -140,7 +140,7 @@ function UpgradeCardTile({ cardId, creature, isSelected, onClick }) {
         )}
         {baseDef.shieldAmount !== undefined && (
           <div>
-            <span style={{ color:"#605840" }}>SHD </span>
+            <span style={{ color:"#B09870" }}>SHD </span>
             <span style={{ color:"#4080E0" }}>{baseDef.shieldAmount}</span>
             <span style={{ color:"#505040" }}> → </span>
             <span style={{ color:"#40C850", fontWeight:900 }}>{upgraded.shieldAmount}</span>
@@ -148,7 +148,7 @@ function UpgradeCardTile({ cardId, creature, isSelected, onClick }) {
         )}
         {baseDef.healAmount !== undefined && (
           <div>
-            <span style={{ color:"#605840" }}>HEL </span>
+            <span style={{ color:"#B09870" }}>HEL </span>
             <span style={{ color:"#40A030" }}>{baseDef.healAmount}</span>
             <span style={{ color:"#505040" }}> → </span>
             <span style={{ color:"#40C850", fontWeight:900 }}>{upgraded.healAmount}</span>
@@ -156,7 +156,7 @@ function UpgradeCardTile({ cardId, creature, isSelected, onClick }) {
         )}
         {baseDef.energyCost > 0 && (
           <div>
-            <span style={{ color:"#605840" }}>NRG </span>
+            <span style={{ color:"#B09870" }}>NRG </span>
             <span style={{ color:"#F8D030" }}>{baseDef.energyCost}</span>
             <span style={{ color:"#505040" }}> → </span>
             <span style={{ color:"#40C850", fontWeight:900 }}>{upgraded.energyCost}</span>
@@ -225,7 +225,7 @@ export default function RestScreen() {
         <h2 style={{ fontSize:20, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.1em", margin:0 }}>
           {choice === "heal" ? "PARTY HEALED" : "CARD UPGRADED"}
         </h2>
-        <p style={{ fontSize:9, color:"#504838", letterSpacing:"0.08em" }}>
+        <p style={{ fontSize:13, color:"#A08868", letterSpacing:"0.08em" }}>
           {choice === "heal"
             ? "Your creatures are rested and ready."
             : `${CARD_DEFS[selectedCard + "_plus"]?.name ?? "Card"} is now stronger.`}
@@ -267,7 +267,7 @@ export default function RestScreen() {
         <div style={{ fontSize:16, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.08em" }}>
           ♥ REST SITE
         </div>
-        <div style={{ fontSize:9, color:"#504838", letterSpacing:"0.08em", marginTop:2 }}>
+        <div style={{ fontSize:13, color:"#A08868", letterSpacing:"0.08em", marginTop:2 }}>
           Take a moment. You can only choose one.
         </div>
       </div>
@@ -334,12 +334,12 @@ export default function RestScreen() {
         {choice === "heal" && (
           <div>
             <div style={{
-              fontSize:9, color:"#403828", letterSpacing:"0.1em", marginBottom:12,
+              fontSize:13, color:"#907858", letterSpacing:"0.1em", marginBottom:12,
               display:"flex", alignItems:"center", gap:8,
             }}>
               <button
                 onClick={() => setChoice(null)}
-                style={{ background:"none", border:"none", color:"#504838", cursor:"pointer", fontSize:12 }}
+                style={{ background:"none", border:"none", color:"#A08868", cursor:"pointer", fontSize:12 }}
               >←</button>
               HEAL PARTY — 25% max HP restored
             </div>
@@ -375,12 +375,12 @@ export default function RestScreen() {
         {choice === "upgrade" && (
           <div>
             <div style={{
-              fontSize:9, color:"#403828", letterSpacing:"0.1em", marginBottom:12,
+              fontSize:13, color:"#907858", letterSpacing:"0.1em", marginBottom:12,
               display:"flex", alignItems:"center", gap:8,
             }}>
               <button
                 onClick={() => { setChoice(null); setCard(null); }}
-                style={{ background:"none", border:"none", color:"#504838", cursor:"pointer", fontSize:12 }}
+                style={{ background:"none", border:"none", color:"#A08868", cursor:"pointer", fontSize:12 }}
               >←</button>
               UPGRADE CARD — choose a creature, then a card
             </div>
@@ -413,7 +413,7 @@ export default function RestScreen() {
             {/* Card selection */}
             {creature && (
               <>
-                <div style={{ fontSize:8, color:"#403828", letterSpacing:"0.08em", marginBottom:8 }}>
+                <div style={{ fontSize:12, color:"#907858", letterSpacing:"0.08em", marginBottom:8 }}>
                   {creature.name.toUpperCase()}'S DECK — {deckCardIds.length} unique cards
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
@@ -427,7 +427,7 @@ export default function RestScreen() {
                     />
                   ))}
                   {deckCardIds.length === 0 && (
-                    <p style={{ fontSize:9, color:"#403828" }}>No cards in deck.</p>
+                    <p style={{ fontSize:13, color:"#907858" }}>No cards in deck.</p>
                   )}
                 </div>
               </>

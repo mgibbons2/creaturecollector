@@ -15,7 +15,7 @@ function StatLine({ label, value }) {
       padding:"6px 0",
       fontSize:10,
     }}>
-      <span style={{ color:"#605840", letterSpacing:"0.06em" }}>{label}</span>
+      <span style={{ color:"#B09870", letterSpacing:"0.06em" }}>{label}</span>
       <span style={{ color:"#E8E8D0", fontWeight:900 }}>{value}</span>
     </div>
   );
@@ -49,7 +49,7 @@ export function GameOverScreen() {
         }}>
           DEFEATED
         </h2>
-        <p style={{ fontSize:10, color:"#504838", letterSpacing:"0.08em" }}>
+        <p style={{ fontSize:10, color:"#A08868", letterSpacing:"0.08em" }}>
           All creatures have fainted. Your run is over.
         </p>
       </div>
@@ -61,7 +61,7 @@ export function GameOverScreen() {
         width:"100%", maxWidth:340, marginBottom:24,
       }}>
         <div style={{
-          fontSize:9, color:"#403828", letterSpacing:"0.12em",
+          fontSize:13, color:"#907858", letterSpacing:"0.12em",
           textTransform:"uppercase", marginBottom:10,
         }}>
           Run Summary
@@ -88,8 +88,8 @@ export function GameOverScreen() {
                 textAlign:"center", minWidth:90,
               }}>
                 <div style={{ fontSize:14, marginBottom:4 }}>✝</div>
-                <div style={{ fontSize:9, fontWeight:900, color:"#E8E8D0" }}>{c.name}</div>
-                <div style={{ fontSize:8, color: typeCol + "88" }}>Lv{c.level}</div>
+                <div style={{ fontSize:13, fontWeight:900, color:"#E8E8D0" }}>{c.name}</div>
+                <div style={{ fontSize:12, color: typeCol + "88" }}>Lv{c.level}</div>
               </div>
             );
           })}

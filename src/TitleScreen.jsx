@@ -59,7 +59,7 @@ export default function TitleScreen() {
 
         {/* Logo */}
         <div style={{
-          fontSize:11, fontWeight:900, letterSpacing:"0.35em",
+          fontSize:11, fontWeight:900, letterSpacing:"0.08em",
           color:"#807860", textTransform:"uppercase", marginBottom:16,
         }}>
           ✦ A Roguelike Adventure ✦
@@ -79,7 +79,7 @@ export default function TitleScreen() {
         </h1>
 
         <div style={{
-          fontSize:14, color:"#605840", letterSpacing:"0.2em",
+          fontSize:14, color:"#B09870", letterSpacing:"0.05em",
           textTransform:"uppercase", marginBottom:48,
         }}>
           DECK BUILDER
@@ -92,7 +92,7 @@ export default function TitleScreen() {
         }}>
           {Object.entries(TYPE_COLORS).map(([type, col]) => (
             <span key={type} style={{
-              fontSize:9, fontWeight:900, padding:"3px 10px",
+              fontSize:13, fontWeight:900, padding:"3px 10px",
               borderRadius:3, letterSpacing:"0.12em",
               background: col.mid + "22",
               border: `1px solid ${col.mid}44`,
@@ -115,7 +115,7 @@ export default function TitleScreen() {
           </PokeButton>
         </div>
 
-        <div style={{ marginTop:16, fontSize:9, color:"#403828", letterSpacing:"0.1em" }}>
+        <div style={{ marginTop:16, fontSize:13, color:"#907858", letterSpacing:"0.1em" }}>
           PRESS TO BEGIN YOUR JOURNEY
         </div>
       </div>

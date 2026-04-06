@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState } from "react";
+import { CardTooltip as ShopCardTooltip } from "./CardTooltip.jsx";
 import { useIsMobile } from "./useMediaQuery.js";
 import { useRun, RunActions } from "./RunContext.jsx";
 import { CARD_DEFS, getDraftPool } from "./cardDefs.js";
@@ -67,98 +68,140 @@ function GoldBar({ gold }) {
       <span style={{ fontSize:16, fontWeight:900, color:"#F8D030", letterSpacing:"0.04em" }}>
         {gold}
       </span>
-      <span style={{ fontSize:9, color:"#605840", letterSpacing:"0.08em" }}>GOLD</span>
+      <span style={{ fontSize:13, color:"#B09870", letterSpacing:"0.08em" }}>GOLD</span>
     </div>
   );
 }
 
-function ShopCard({ card, creature, onBuy, bought, canAfford }) {
-  const col  = TYPE_COLORS[card.type] || TYPE_COLORS.colorless;
-  const cost = CARD_COSTS[card.rarity] ?? 50;
+function ShopCard({ card, creature, onBuy, bought, canAfford, onHoverCard }) {
+  const col      = TYPE_COLORS[card.type] || TYPE_COLORS.colorless;
+  const cost     = CARD_COSTS[card.rarity] ?? 50;
   const isAttack = card.tags.includes("attack");
   const isDefend = card.tags.includes("defend");
-  const legal = creature
+  const legal    = creature
     ? (card.type === creature.type || card.type === "colorless") && card.levelRequired <= creature.level
     : false;
-
   const disabled = bought || !canAfford || !legal || !creature;
+  const cardCol  = col;
 
   return (
-    <div style={{
-      width:110, flexShrink:0,
-      background: bought ? "#141410" : disabled ? "#141410" : col.bg,
-      border:`2px solid ${bought ? "#252514" : disabled ? "#252514" : col.mid + "66"}`,
-      borderRadius:8, padding:"10px 9px 8px",
-      opacity: bought ? 0.35 : disabled ? 0.45 : 1,
-      fontFamily:"'Courier New', monospace",
-      position:"relative",
-      transition:"all 0.15s",
-    }}>
-      {/* Cost badge */}
+    <div
+      className="deck-card"
+      onMouseEnter={e => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        onHoverCard?.({ card, cardCol, isAttack, isDefend,
+          x: rect.left + rect.width / 2, y: rect.top });
+      }}
+      onMouseLeave={() => onHoverCard?.(null)}
+      style={{
+        position:"relative", width:88, height: bought ? 108 : 148,
+        background: `linear-gradient(160deg, ${disabled ? "#1a1a12" : "#FFFEF8"} 0%, ${disabled ? "#141410" : "#F8F4E8"} 100%)`,
+        border: `2px solid ${bought ? "#504838" : disabled ? "#504838" : cardCol.mid}`,
+        borderRadius:9,
+        padding:"7px 7px 6px",
+        boxSizing:"border-box",
+        overflow:"visible",
+        flexShrink:0,
+        opacity: disabled ? 0.45 : 1,
+        boxShadow: disabled ? "none" :
+          `0 4px 12px rgba(0,0,0,0.3), 0 2px 0 ${cardCol.dark}, inset 0 1px 0 rgba(255,255,255,0.8)`,
+        fontFamily:"'Courier New', monospace",
+        cursor: disabled ? "default" : "pointer",
+        transition:"opacity 0.15s",
+      }}
+    >
+      {/* Price badge top-right */}
       <div style={{
         position:"absolute", top:-9, right:-9,
-        background: bought ? "#252514" : canAfford && legal ? "#C89010" : "#2a2018",
-        color: bought ? "#403828" : canAfford && legal ? "#fff" : "#605840",
-        border:`2px solid ${bought ? "#302818" : canAfford && legal ? "#604000" : "#302818"}`,
+        background: bought ? "#504838" : canAfford && legal && creature ? "#C89010" : "#2a2018",
+        color: bought ? "#807858" : canAfford && legal && creature ? "#fff" : "#806040",
+        border: `2px solid ${bought ? "#706040" : canAfford && legal && creature ? "#7A5800" : "#504030"}`,
         borderRadius:"50%", width:28, height:28,
         display:"flex", alignItems:"center", justifyContent:"center",
-        fontSize:9, fontWeight:900,
+        fontSize: bought ? 14 : 10, fontWeight:900, zIndex:2,
       }}>
         {bought ? "✓" : `¥${cost}`}
       </div>
 
-      {/* Rarity + type */}
-      <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:6 }}>
-        <div style={{ width:5, height:5, borderRadius:"50%", background:RARITY_COLOR[card.rarity] }} />
-        <span style={{ fontSize:7, color:RARITY_COLOR[card.rarity], fontWeight:900, letterSpacing:"0.08em" }}>
-          {card.rarity.toUpperCase()}
-        </span>
-      </div>
+      {/* Energy cost pip top-left */}
+      <div style={{
+        position:"absolute", top:4, left:4,
+        width:15, height:15, borderRadius:"50%",
+        background: card.energyCost===0 ? "#C8C0A8" : cardCol.mid,
+        color:"#fff", fontSize:10, fontWeight:900,
+        display:"flex", alignItems:"center", justifyContent:"center",
+        border: `1.5px solid ${cardCol.dark}`,
+        lineHeight:1, zIndex:2,
+      }}>{card.energyCost}</div>
 
-      {/* Silhouette */}
-      <div style={{ display:"flex", justifyContent:"center", marginBottom:5 }}>
-        <svg width={30} height={30} viewBox="0 0 100 100">
-          <path d={TYPE_SHAPES[card.type] || TYPE_SHAPES.colorless} fill={col.mid} opacity={0.7} />
+      {/* Type stripe */}
+      <div style={{
+        height:3, borderRadius:2, marginBottom:5, marginTop:2,
+        background: `linear-gradient(to right,${cardCol.light},${cardCol.mid})`,
+        opacity: disabled ? 0.4 : 1,
+      }} />
+
+      {/* Type silhouette */}
+      <div style={{ display:"flex", justifyContent:"center", marginBottom:4 }}>
+        <svg width={28} height={28} viewBox="0 0 100 100">
+          <path d={TYPE_SHAPES[card.type]||TYPE_SHAPES.colorless}
+            fill={disabled ? "#605040" : cardCol.mid} opacity={0.65}/>
         </svg>
       </div>
 
-      <div style={{ fontSize:9, fontWeight:900, color:"#E8E8D0", textAlign:"center", lineHeight:1.2, marginBottom:3 }}>
+      {/* Card name */}
+      <div style={{
+        fontSize:8, fontWeight:900, color: disabled ? "#706050" : "#302810",
+        textAlign:"center", lineHeight:1.2, marginBottom:3, letterSpacing:"0.01em",
+      }}>
         {card.name.toUpperCase()}
       </div>
 
-      <div style={{ textAlign:"center", marginBottom:5 }}>
+      {/* Badge row */}
+      <div style={{ textAlign:"center", marginBottom:4, display:"flex", justifyContent:"center", gap:3 }}>
         <span style={{
           fontSize:7, fontWeight:900, padding:"1px 4px", borderRadius:2,
-          background: isAttack ? "#F09030" : isDefend ? "#5878F0" : "#58A838",
-          color:"#fff", letterSpacing:"0.07em",
+          background: disabled ? "#504838" : isAttack ? "#F09030" : isDefend ? "#5878F0" : "#58A838",
+          color:"#fff", letterSpacing:"0.04em",
         }}>
           {isAttack ? "ATK" : isDefend ? "DEF" : "UTL"}
         </span>
         {!legal && creature && (
-          <span style={{ fontSize:7, color:"#603030", marginLeft:4, fontWeight:900 }}>LOCKED</span>
+          <span style={{ fontSize:7, color:"#E05050", fontWeight:900 }}>🔒</span>
         )}
       </div>
 
-      <div style={{ fontSize:7.5, color:"#605840", lineHeight:1.4, textAlign:"center", borderTop:"1px solid #252514", paddingTop:5, minHeight:26 }}>
+      {/* Description */}
+      <div style={{
+        fontSize:7, color: disabled ? "#806050" : "#A09070", lineHeight:1.25,
+        textAlign:"center",
+        borderTop: `1px solid ${disabled ? "#30281833" : cardCol.mid + "33"}`,
+        paddingTop:3,
+        overflow:"hidden",
+        display:"-webkit-box",
+        WebkitLineClamp:2,
+        WebkitBoxOrient:"vertical",
+      }}>
         {liveDesc(card, creature)}
       </div>
 
+      {/* Buy button */}
       {!bought && !disabled && (
         <button
           onClick={onBuy}
           style={{
-            width:"100%", marginTop:7,
+            width:"100%", marginTop:6,
             fontFamily:"'Courier New', monospace",
-            fontSize:8, fontWeight:900,
+            fontSize:10, fontWeight:900,
             background:"#C89010", color:"#fff",
-            border:"2px solid #604000", borderRadius:4,
-            padding:"4px 0", cursor:"pointer",
-            letterSpacing:"0.08em",
-            boxShadow:"0 2px 0 #604000",
+            border:"2px solid #7A5800", borderRadius:4,
+            padding:"3px 0", cursor:"pointer",
+            letterSpacing:"0.06em",
+            boxShadow:"0 2px 0 #7A5800",
           }}
-          onMouseDown={e => e.currentTarget.style.transform="translateY(2px)"} onTouchStart={e => e.currentTarget.style.transform="translateY(2px)"}
-          onMouseUp={e => e.currentTarget.style.transform="none"} onTouchEnd={e => e.currentTarget.style.transform="none"}
-          onMouseLeave={e => e.currentTarget.style.transform="none"} onTouchCancel={e => e.currentTarget.style.transform="none"}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(2px)"}
+          onMouseUp={e => e.currentTarget.style.transform="none"}
+          onMouseLeave={e => e.currentTarget.style.transform="none"}
         >
           BUY
         </button>
@@ -174,7 +217,7 @@ function RelicCard({ relic, onBuy, bought, canAfford, owned }) {
   return (
     <div style={{
       background: disabled ? "#141410" : "#1a1410",
-      border:`2px solid ${owned ? "#302818" : disabled ? "#252514" : col.mid + "55"}`,
+      border:`2px solid ${owned ? "#806854" : disabled ? "#706040" : col.mid + "55"}`,
       borderRadius:8, padding:"12px 12px 10px",
       opacity: disabled ? 0.4 : 1,
       fontFamily:"'Courier New', monospace",
@@ -185,12 +228,12 @@ function RelicCard({ relic, onBuy, bought, canAfford, owned }) {
       {/* Cost */}
       <div style={{
         position:"absolute", top:-9, right:-9,
-        background: owned || bought ? "#252514" : canAfford ? "#C89010" : "#2a2018",
-        color: owned || bought ? "#403828" : canAfford ? "#fff" : "#605840",
-        border:`2px solid ${owned || bought ? "#302818" : canAfford ? "#604000" : "#302818"}`,
+        background: owned || bought ? "#706040" : canAfford ? "#C89010" : "#2a2018",
+        color: owned || bought ? "#907858" : canAfford ? "#fff" : "#B09870",
+        border:`2px solid ${owned || bought ? "#806854" : canAfford ? "#604000" : "#806854"}`,
         borderRadius:"50%", width:30, height:30,
         display:"flex", alignItems:"center", justifyContent:"center",
-        fontSize:8, fontWeight:900,
+        fontSize:12, fontWeight:900,
       }}>
         {owned || bought ? "✓" : `¥${relic.cost}`}
       </div>
@@ -199,7 +242,7 @@ function RelicCard({ relic, onBuy, bought, canAfford, owned }) {
         <div style={{ width:10, height:10, borderRadius:"50%", background:col.mid, flexShrink:0 }} />
         <span style={{ fontSize:11, fontWeight:900, color:"#E8E8D0" }}>{relic.name}</span>
       </div>
-      <p style={{ fontSize:9, color:"#807860", lineHeight:1.55, margin:"0 0 8px" }}>
+      <p style={{ fontSize:13, color:"#807860", lineHeight:1.55, margin:"0 0 8px" }}>
         {relic.desc}
       </p>
 
@@ -209,7 +252,7 @@ function RelicCard({ relic, onBuy, bought, canAfford, owned }) {
           style={{
             width:"100%",
             fontFamily:"'Courier New', monospace",
-            fontSize:9, fontWeight:900,
+            fontSize:13, fontWeight:900,
             background:"#C89010", color:"#fff",
             border:"2px solid #604000", borderRadius:4,
             padding:"5px 0", cursor:"pointer",
@@ -229,11 +272,32 @@ function RelicCard({ relic, onBuy, bought, canAfford, owned }) {
 
 // ─── MAIN SCREEN ─────────────────────────────────────────────
 
+// ─── DECK-CARD ANIMATION (matches party screen) ──────────────
+const SHOP_CARD_STYLE = `
+  @keyframes deckCardBob {
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-4px); }
+  }
+  .deck-card {
+    transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.18s ease, border-color 0.15s ease;
+    animation: deckCardBob 3s ease-in-out infinite;
+  }
+  .deck-card:hover {
+    transform: translateY(-10px) scale(1.08) !important;
+    animation: none !important;
+    z-index: 10;
+  }
+`;
+
 export default function ShopScreen() {
+  const [hoveredCard, setHoveredCard] = useState(null);
   const isMobile = useIsMobile();
   const { run, dispatch } = useRun();
   const { party, gold, relics, map } = run;
   const floorNumber = map?.floorNumber ?? 1;
+
+
 
   // Build stock once on mount
   const [stock] = useState(() => buildShopStock(party, floorNumber));
@@ -267,7 +331,9 @@ export default function ShopScreen() {
   const activeCreature = party[selectedCreature];
 
   return (
-    <div style={{
+    <>
+      <style>{SHOP_CARD_STYLE}</style>
+      <div style={{
       minHeight:"100vh",
       background:"#111108",
       fontFamily:"'Courier New', monospace",
@@ -285,7 +351,7 @@ export default function ShopScreen() {
           <div style={{ fontSize:16, fontWeight:900, color:"#E8E8D0", letterSpacing:"0.08em" }}>
             $ ITEM SHOP
           </div>
-          <div style={{ fontSize:9, color:"#504838", letterSpacing:"0.08em", marginTop:2 }}>
+          <div style={{ fontSize:13, color:"#A08868", letterSpacing:"0.08em", marginTop:2 }}>
             Floor {floorNumber} · Spend wisely
           </div>
         </div>
@@ -310,7 +376,7 @@ export default function ShopScreen() {
               fontSize:10, fontWeight:900,
               padding:"10px 20px",
               background:"transparent",
-              color: activeTab === tab.key ? "#E8E8D0" : "#504838",
+              color: activeTab === tab.key ? "#E8E8D0" : "#A08868",
               border:"none",
               borderBottom: activeTab === tab.key ? "3px solid #C89010" : "3px solid transparent",
               cursor:"pointer", letterSpacing:"0.1em",
@@ -329,7 +395,7 @@ export default function ShopScreen() {
           <div>
             {/* Creature selector */}
             <div style={{ marginBottom:16 }}>
-              <div style={{ fontSize:8, color:"#403828", letterSpacing:"0.1em", marginBottom:8 }}>
+              <div style={{ fontSize:12, color:"#907858", letterSpacing:"0.1em", marginBottom:8 }}>
                 BUYING FOR
               </div>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
@@ -363,6 +429,7 @@ export default function ShopScreen() {
               {stock.map(card => (
                 <ShopCard
                   key={card.id}
+                  onHoverCard={setHoveredCard}
                   card={card}
                   creature={activeCreature}
                   onBuy={() => buyCard(card)}
@@ -371,13 +438,13 @@ export default function ShopScreen() {
                 />
               ))}
               {stock.length === 0 && (
-                <p style={{ fontSize:10, color:"#403828", letterSpacing:"0.08em" }}>
+                <p style={{ fontSize:10, color:"#907858", letterSpacing:"0.08em" }}>
                   No cards available for your current party.
                 </p>
               )}
             </div>
 
-            <div style={{ marginTop:12, fontSize:8, color:"#403828", letterSpacing:"0.06em" }}>
+            <div style={{ marginTop:12, fontSize:12, color:"#907858", letterSpacing:"0.06em" }}>
               Cards marked LOCKED cannot be used by the selected creature (wrong type or level too high).
               Switch creatures above to see their available cards.
             </div>
@@ -387,7 +454,7 @@ export default function ShopScreen() {
         {/* ── RELICS TAB ── */}
         {activeTab === "relics" && (
           <div>
-            <div style={{ fontSize:8, color:"#403828", letterSpacing:"0.1em", marginBottom:12 }}>
+            <div style={{ fontSize:12, color:"#907858", letterSpacing:"0.1em", marginBottom:12 }}>
               RELICS — passive effects that last the entire run
             </div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
@@ -404,7 +471,7 @@ export default function ShopScreen() {
             </div>
             {relics.length > 0 && (
               <div style={{ marginTop:20 }}>
-                <div style={{ fontSize:8, color:"#403828", letterSpacing:"0.1em", marginBottom:8 }}>
+                <div style={{ fontSize:12, color:"#907858", letterSpacing:"0.1em", marginBottom:8 }}>
                   YOUR RELICS
                 </div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
@@ -414,7 +481,7 @@ export default function ShopScreen() {
                     const col = TYPE_COLORS[r.type] || TYPE_COLORS.colorless;
                     return (
                       <span key={id} style={{
-                        fontSize:9, padding:"3px 10px",
+                        fontSize:13, padding:"3px 10px",
                         background: col.mid + "22", color: col.light,
                         border:`1px solid ${col.mid}44`,
                         borderRadius:4, letterSpacing:"0.06em",
@@ -432,7 +499,7 @@ export default function ShopScreen() {
         {/* ── HEAL TAB ── */}
         {activeTab === "heal" && (
           <div>
-            <div style={{ fontSize:8, color:"#403828", letterSpacing:"0.1em", marginBottom:12 }}>
+            <div style={{ fontSize:12, color:"#907858", letterSpacing:"0.1em", marginBottom:12 }}>
               HEALING SERVICES
             </div>
 
@@ -449,14 +516,14 @@ export default function ShopScreen() {
                   }}>
                     <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
                       <span style={{ fontSize:10, fontWeight:900, color:"#E8E8D0" }}>{c.name}</span>
-                      <span style={{ fontSize:9, color:typeCol }}>Lv{c.level}</span>
+                      <span style={{ fontSize:13, color:typeCol }}>Lv{c.level}</span>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                      <span style={{ fontSize:8, fontWeight:900, color:"#38A018", minWidth:14 }}>HP</span>
-                      <div style={{ flex:1, height:6, background:"#302818", borderRadius:3, overflow:"hidden" }}>
+                      <span style={{ fontSize:12, fontWeight:900, color:"#38A018", minWidth:14 }}>HP</span>
+                      <div style={{ flex:1, height:6, background:"#806854", borderRadius:3, overflow:"hidden" }}>
                         <div style={{ height:"100%", width:`${pct}%`, background:hpCol, borderRadius:3 }} />
                       </div>
-                      <span style={{ fontSize:8, color:"#605840" }}>{c.currentHp}/{c.maxHp}</span>
+                      <span style={{ fontSize:12, color:"#B09870" }}>{c.currentHp}/{c.maxHp}</span>
                     </div>
                   </div>
                 );
@@ -466,7 +533,7 @@ export default function ShopScreen() {
             {/* Heal option */}
             <div style={{
               background:"#1a1a10",
-              border:`2px solid ${gold >= HEAL_COST ? "#406020" : "#252514"}`,
+              border:`2px solid ${gold >= HEAL_COST ? "#406020" : "#706040"}`,
               borderRadius:8, padding:"16px",
               maxWidth:480, width:"100%",
             }}>
@@ -477,7 +544,7 @@ export default function ShopScreen() {
                   color: gold >= HEAL_COST ? "#F8D030" : "#603030",
                 }}>¥{HEAL_COST}</span>
               </div>
-              <p style={{ fontSize:9, color:"#807860", lineHeight:1.6, margin:"0 0 12px" }}>
+              <p style={{ fontSize:13, color:"#807860", lineHeight:1.6, margin:"0 0 12px" }}>
                 Restore 30% of max HP to all party members.
               </p>
               <button
@@ -487,9 +554,9 @@ export default function ShopScreen() {
                   width:"100%",
                   fontFamily:"'Courier New', monospace",
                   fontSize:11, fontWeight:900,
-                  background: gold >= HEAL_COST ? "#38A018" : "#252514",
-                  color: gold >= HEAL_COST ? "#fff" : "#403828",
-                  border:`3px solid ${gold >= HEAL_COST ? "#185808" : "#302818"}`,
+                  background: gold >= HEAL_COST ? "#38A018" : "#706040",
+                  color: gold >= HEAL_COST ? "#fff" : "#907858",
+                  border:`3px solid ${gold >= HEAL_COST ? "#185808" : "#806854"}`,
                   borderRadius:5, padding:"8px 0",
                   cursor: gold >= HEAL_COST ? "pointer" : "not-allowed",
                   letterSpacing:"0.1em",
@@ -513,7 +580,7 @@ export default function ShopScreen() {
         background:"#141410", borderTop:"2px solid #252514",
         display:"flex", justifyContent:"space-between", alignItems:"center",
       }}>
-        <span style={{ fontSize:9, color:"#403828", letterSpacing:"0.06em" }}>
+        <span style={{ fontSize:13, color:"#907858", letterSpacing:"0.06em" }}>
           You can leave at any time. Items don't restock.
         </span>
         <button
@@ -535,5 +602,18 @@ export default function ShopScreen() {
         </button>
       </div>
     </div>
+
+      {/* Card tooltip */}
+      {hoveredCard && (
+        <ShopCardTooltip
+          card={hoveredCard.card}
+          cardCol={hoveredCard.cardCol}
+          isAttack={hoveredCard.isAttack}
+          isDefend={hoveredCard.isDefend}
+          x={hoveredCard.x}
+          y={hoveredCard.y}
+        />
+      )}
+    </>
   );
 }

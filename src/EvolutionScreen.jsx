@@ -131,17 +131,17 @@ function StatRow({ label, before, after }) {
       animation:"slideInStat 0.4s ease-out both",
     }}>
       <span style={{
-        fontSize:8, fontWeight:900, color:"#504838",
+        fontSize:12, fontWeight:900, color:"#A08868",
         letterSpacing:"0.08em", minWidth:28,
       }}>
         {label}
       </span>
 
       {/* Before */}
-      <span style={{ fontSize:12, color:"#605840", minWidth:22, textAlign:"right" }}>
+      <span style={{ fontSize:12, color:"#B09870", minWidth:22, textAlign:"right" }}>
         {before}
       </span>
-      <span style={{ fontSize:10, color:"#403828" }}>→</span>
+      <span style={{ fontSize:10, color:"#907858" }}>→</span>
 
       {/* After */}
       <span style={{
@@ -155,7 +155,7 @@ function StatRow({ label, before, after }) {
       {/* Delta */}
       {delta !== 0 && (
         <span style={{
-          fontSize:9, fontWeight:900,
+          fontSize:13, fontWeight:900,
           color: improved ? "#40C850" : "#E84040",
           marginLeft:2,
         }}>
@@ -165,7 +165,7 @@ function StatRow({ label, before, after }) {
 
       {/* Modifier */}
       <span style={{
-        fontSize:8, color:"#403828", marginLeft:"auto",
+        fontSize:12, color:"#907858", marginLeft:"auto",
       }}>
         mod {modAfter >= 0 ? "+" : ""}{modAfter}
       </span>
@@ -246,8 +246,8 @@ export default function EvolutionScreen({ creature, onDone }) {
 
       {/* Stage label — top */}
       <div style={{
-        fontSize:9, fontWeight:900, color:col.light,
-        letterSpacing:"0.3em", textTransform:"uppercase",
+        fontSize:13, fontWeight:900, color:col.light,
+        letterSpacing:"0.06em", textTransform:"uppercase",
         marginBottom:16,
         opacity: phase >= PHASES.NEW_FORM ? 1 : 0,
         transition:"opacity 0.5s",
@@ -297,7 +297,7 @@ export default function EvolutionScreen({ creature, onDone }) {
       <div style={{
         fontSize:"clamp(28px, 6vw, 48px)",
         fontWeight:900,
-        color: showNew ? "#E8E8D0" : "#302818",
+        color: showNew ? "#E8E8D0" : "#806854",
         letterSpacing:"0.06em",
         textAlign:"center",
         marginBottom:8,
@@ -323,7 +323,7 @@ export default function EvolutionScreen({ creature, onDone }) {
       {/* Description */}
       {showNew && (
         <p style={{
-          fontSize:10, color:"#605840",
+          fontSize:10, color:"#B09870",
           lineHeight:1.7, maxWidth:340,
           textAlign:"center", margin:"0 0 24px",
           position:"relative", zIndex:10,
@@ -341,7 +341,7 @@ export default function EvolutionScreen({ creature, onDone }) {
           marginBottom:24,
         }}>
           <div style={{
-            fontSize:8, color:"#403828", letterSpacing:"0.12em",
+            fontSize:12, color:"#907858", letterSpacing:"0.12em",
             marginBottom:8, textAlign:"center",
           }}>
             STAT CHANGES
